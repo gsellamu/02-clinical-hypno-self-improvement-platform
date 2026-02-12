@@ -1,0 +1,81 @@
+sequenceDiagram
+    participant User
+    participant System
+    participant Safety as Safety Guardian
+    participant Orchestrator
+    participant Therapist as Human Therapist
+    participant Emergency as Emergency Protocol
+
+    Note over User,Emergency: SCENARIO: User shows signs of severe distress
+    
+    User->>System: Biometric spike (HR: 145, GSR: 0.95)
+    User->>System: Verbal cue: "I can't do this"
+    
+    System->>Safety: Alert: Multiple distress indicators
+    Safety->>Safety: Assess severity
+    Note over Safety: Severity score: 0.92 (CRITICAL)
+    
+    Safety->>Safety: Check against escalation triggers
+    Note over Safety: Triggers met:<br/>✓ Sustained high stress (>60 sec)<br/>✓ Verbal distress<br/>✓ Unable to calm with interventions
+    
+    Safety->>Orchestrator: ESCALATE: Severe distress
+    
+    Orchestrator->>Emergency: Initiate emergency emergence
+    Emergency->>System: Pause all therapeutic content
+    Emergency->>System: Begin rapid emergence protocol
+    
+    System->>User: "We're going to bring you back up now"
+    System->>User: Count up 0-1-2-3-4-5 (accelerated pace)
+    System->>User: Eyes open, wide awake
+    
+    User->>System: Eyes open, breathing heavily
+    
+    System->>User: Display calming visuals
+    System->>User: "You're safe. Take your time."
+    
+    Emergency->>Safety: User emerged, monitoring
+    
+    Safety->>Safety: Continue biometric monitoring
+    
+    alt If user stabilizes within 5 minutes
+        Safety->>Orchestrator: User stabilizing
+        Orchestrator->>System: Display support message
+        System->>User: "How are you feeling? Would you like to talk to a therapist?"
+        
+        User->>System: "I'd like to talk to someone"
+        
+        System->>Therapist: Alert: User requests support
+        Note over Therapist: Priority queue:<br/>User: ID-123<br/>Incident: Severe distress during session<br/>Time: 2 min ago
+        
+        Therapist->>System: Accept connection
+        System->>User: "A therapist will be with you shortly"
+        
+        Therapist->>User: Video call established
+        Note over Therapist,User: Therapist provides<br/>emotional support,<br/>assesses needs
+        
+        Therapist->>System: Log incident notes
+        Therapist->>System: Recommend follow-up protocol
+        
+    else If distress persists or worsens
+        Safety->>Emergency: CRITICAL: Unable to stabilize
+        Emergency->>System: Display crisis resources
+        System->>User: "If this is an emergency, call 911"
+        System->>User: Crisis hotline numbers
+        
+        Emergency->>Therapist: URGENT: Immediate intervention needed
+        Note over Emergency,Therapist: Incident severity: CRITICAL<br/>Automatic therapist paging
+        
+        Therapist->>User: Immediate contact attempt
+        
+        Emergency->>Emergency: Log critical incident
+        Emergency->>Emergency: Flag user account for review
+    end
+    
+    Safety->>Orchestrator: Incident resolved
+    Orchestrator->>Orchestrator: Generate incident report
+    Orchestrator->>Therapist: Send full session data
+    Orchestrator->>Therapist: Include biometric timeline
+    Orchestrator->>Therapist: Include AI decision log
+    
+    Note over Orchestrator,Therapist: User account flagged:<br/>"Requires human approval for future sessions"
+    

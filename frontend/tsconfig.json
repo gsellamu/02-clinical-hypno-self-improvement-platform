@@ -1,0 +1,37 @@
+{
+  
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable", "esnext"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+     // You typically do not need "types": ["@react-three/fiber"] if you use the global.d.ts file, 
+    // but we can leave it here as it doesn't hurt.
+    "types": ["@react-three/fiber"], 
+    
+    
+    /* Path Aliases */
+    // If you use an "@/" alias, add it here:
+    // "paths": {
+    //   "@/*": ["./src/*"]
+    // }
+     },
+  "include": ["src", "src/types"], 
+  "references": [
+    // If you had project references from previous issues, they would go here.
+  ]
+}
+

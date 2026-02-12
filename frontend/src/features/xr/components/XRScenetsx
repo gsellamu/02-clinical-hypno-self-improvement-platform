@@ -1,0 +1,123 @@
+﻿import { Canvas } from '@react-three/fiber';
+import { XR, createXRStore } from '@react-three/xr';
+import { OrbitControls } from '@react-three/drei';
+import { useEffect, useMemo, useState } from 'react';
+import { useXRStore } from '../stores/xr.store';
+import { SoftLitRoom } from '../environments/SoftLitRoom';
+import { NatureScene } from '../environments/NatureScene';
+import { FloatingPlatform } from '../environments/FloatingPlatform';
+import { PerformanceMonitor } from '../performance/LODSystem';
+import { AudioSystem } from '../audio/AudioSystem';
+
+interface XRSceneProps {
+  mode: 'xr' | '3d';
+}
+
+export function XRScene({ mode }: XRSceneProps) {
+  const { currentEnvironment, setXRActive } = useXRStore();
+  const [error, setError] = useState<string | null>(null);
+  
+  // Only create XR store in XR mode
+  const store = useMemo(() => {
+    if (mode === 'xr') {
+      return createXRStore();
+    }
+    return null;
+  }, [mode]);
+
+  // Subscribe to XR session state (only in XR mode)
+  useEffect(() => {
+    if (!store) return;
+    
+    const unsubscribe = store.subscribe((state) => {
+      setXRActive(state.session !== null);
+    });
+    
+    return () => unsubscribe();
+  }, [store, setXRActive]);
+
+  // Handle VR entry
+  const handleEnterVR = async () => {
+    if (!store) return;
+    
+    try {
+      setError(null);
+      await store.enterVR();
+    } catch (err) {
+      console.error('Error entering VR:', err);
+      setError('Failed to enter VR. Make sure you are using Meta Quest 3 browser.');
+    }
+  };
+
+  return (
+    <div className="w-full h-screen relative">
+      {/* Error Message */}
+      {error && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg max-w-md text-center">
+          {error}
+        </div>
+      )}
+
+      {/* Enter VR Button (only in XR mode) */}
+      {mode === 'xr' && (
+        <button
+          onClick={handleEnterVR}
+          className="absolute z-10 top-4 left-1/2 transform -translate-x-1/2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg rounded-xl shadow-2xl hover:scale-105 transition-all"
+        >
+          Enter VR
+        </button>
+      )}
+
+      {/* Controls hint for 3D mode */}
+      {mode === '3d' && (
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-10 bg-black/70 text-white px-6 py-3 rounded-lg text-sm text-center">
+          <div className="font-bold mb-1">3D Controls</div>
+          <div>Left Click + Drag: Rotate | Right Click + Drag: Pan | Scroll: Zoom</div>
+        </div>
+      )}
+      
+      <Canvas
+        camera={{ position: [0, 1.6, 5], fov: 75 }}
+        gl={{ 
+          antialias: true,
+          powerPreference: 'high-performance',
+        }}
+        shadows
+      >
+        {/* XR Mode: Wrap in XR component */}
+        {mode === 'xr' && store ? (
+          <XR store={store}>
+            <SceneContent currentEnvironment={currentEnvironment} />
+          </XR>
+        ) : (
+          /* 3D Mode: Regular scene with orbit controls */
+          <>
+            <OrbitControls 
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              minDistance={2}
+              maxDistance={20}
+              maxPolarAngle={Math.PI / 2}
+            />
+            <SceneContent currentEnvironment={currentEnvironment} />
+          </>
+        )}
+      </Canvas>
+    </div>
+  );
+}
+
+// Shared scene content for both modes
+function SceneContent({ currentEnvironment }: { currentEnvironment: string }) {
+  return (
+    <>
+      <PerformanceMonitor />
+      <AudioSystem />
+      
+      {currentEnvironment === 'soft-room' && <SoftLitRoom />}
+      {currentEnvironment === 'nature' && <NatureScene />}
+      {currentEnvironment === 'floating-platform' && <FloatingPlatform />}
+    </>
+  );
+}

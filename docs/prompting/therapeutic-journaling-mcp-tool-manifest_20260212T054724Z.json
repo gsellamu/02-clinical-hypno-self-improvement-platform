@@ -1,0 +1,559 @@
+{
+  "manifest_version": "1.0.0",
+  "generated_at": "2026-02-12T05:47:24Z",
+  "server": {
+    "name": "therapeutic-journaling-mcp",
+    "description": "MCP tool facade for therapeutic journaling platform (sessions, safety, journaling, XR scene specs, TTS, eval).",
+    "transport": [
+      "http",
+      "stdio"
+    ],
+    "auth": {
+      "type": "bearer|none",
+      "notes": "Use bearer tokens for production; none for local dev."
+    }
+  },
+  "tools": [
+    {
+      "name": "safety_screen",
+      "description": "Screen user text for safety and return response constraints.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_text": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_text"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "safety_status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "red"
+            ]
+          },
+          "constraints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recommended_response_mode": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "grounding_only",
+              "crisis_support"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "safety_status",
+          "constraints",
+          "recommended_response_mode"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "create_session_plan",
+      "description": "Create a structured SessionPlan JSON based on intake + selected technique + safety constraints.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_context": {
+            "type": "object"
+          },
+          "goal_area": {
+            "type": "string",
+            "enum": [
+              "relationships",
+              "career",
+              "personal"
+            ]
+          },
+          "technique": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "number"
+          },
+          "intensity": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "safety": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "goal_area",
+          "technique",
+          "duration_minutes",
+          "intensity",
+          "safety"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "session_plan": {
+            "type": "object"
+          },
+          "prompt_ids_used": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "session_plan",
+          "prompt_ids_used"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "save_journal_entry",
+      "description": "Persist a journal entry and associated metadata (tags, mood, technique, artifacts).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "mood": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "technique": {
+            "type": "string"
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "session_id",
+          "text"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "saved_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "entry_id",
+          "saved_at",
+          "status"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_journal_entries",
+      "description": "Retrieve journal entries for a user with filters (date range, tags, technique).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "technique": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer",
+            "default": 50
+          }
+        },
+        "required": [
+          "user_id"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "retrieve_rag",
+      "description": "Retrieve relevant internal guidance snippets (workbook-aligned) for the current session.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "k": {
+            "type": "integer",
+            "default": 5
+          },
+          "filters": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "doc_id": {
+                  "type": "string"
+                },
+                "chunk_id": {
+                  "type": "string"
+                },
+                "section": {
+                  "type": "string"
+                },
+                "body": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "doc_id",
+                "chunk_id",
+                "body",
+                "score"
+              ]
+            }
+          }
+        },
+        "required": [
+          "hits"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "generate_xr_scene_spec",
+      "description": "Generate or adapt an XR scene spec JSON for R3F/WebXR based on theme and comfort constraints.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string"
+          },
+          "comfort_mode": {
+            "type": "boolean",
+            "default": true
+          },
+          "hotspots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "session_plan": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "theme",
+          "hotspots"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "scene_spec": {
+            "type": "object"
+          },
+          "assets_needed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "scene_spec",
+          "assets_needed"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "render_tts",
+      "description": "Render TTS for narration chunks and return audio artifact references. Supports streaming in production.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "voice": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "mp3",
+              "wav",
+              "ogg"
+            ],
+            "default": "mp3"
+          },
+          "chunks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ssml": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "voice",
+          "chunks"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "audio_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "durations_sec": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "audio_urls",
+          "durations_sec"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "name": "evaluate_response",
+      "description": "Evaluate a generated response for safety, tone, clarity, and technique fidelity using rubric scoring.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "assistant_response": {
+            "type": "string"
+          },
+          "requested_technique": {
+            "type": "string"
+          },
+          "safety_status": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "red"
+            ]
+          },
+          "rubric_id": {
+            "type": "string",
+            "default": "EVAL-RESPONSE-RUBRIC-GRADER"
+          }
+        },
+        "required": [
+          "assistant_response",
+          "requested_technique",
+          "safety_status"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "scores": {
+            "type": "object"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "suggested_fix": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "scores",
+          "issues",
+          "suggested_fix"
+        ]
+      },
+      "errorSchema": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

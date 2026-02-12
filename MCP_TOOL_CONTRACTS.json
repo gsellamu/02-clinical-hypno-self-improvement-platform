@@ -1,0 +1,721 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Tool Contracts - Therapeutic Journaling Module",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "retrieve_rag",
+      "description": "Retrieve therapeutic content from Epic 8 GraphRAG knowledge base. Searches across 8 RAG clusters (HMI workbooks, PSR scripts, Theory of Mind materials) to provide clinically-aligned content for prompts, guideposts, and crisis resources.",
+      "provider": "Epic 8 GraphRAG Service (Port 8031)",
+      "inputs": {
+        "type": "object",
+        "required": ["query", "context"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Natural language search query",
+            "examples": ["unsent letter prompts", "crisis resources United States", "E&P physical language style"]
+          },
+          "context": {
+            "type": "string",
+            "enum": [
+              "journaling_prompts",
+              "crisis_resources",
+              "grounding_exercises",
+              "technique_descriptions",
+              "therapeutic_content"
+            ],
+            "description": "Context to filter RAG clusters"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "ep_profile": {
+                "type": "string",
+                "enum": ["Physical", "Emotional", "Hybrid"]
+              },
+              "region": {
+                "type": "string",
+                "description": "ISO country code for localization"
+              },
+              "technique": {
+                "type": "string",
+                "description": "Specific journaling technique"
+              }
+            }
+          },
+          "top_k": {
+            "type": "integer",
+            "default": 5,
+            "minimum": 1,
+            "maximum": 20,
+            "description": "Number of results to return"
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["results", "metadata"],
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string",
+                  "description": "Retrieved text chunk"
+                },
+                "source": {
+                  "type": "string",
+                  "description": "Source document (e.g., 'HMI Workbook Page 12')"
+                },
+                "score": {
+                  "type": "number",
+                  "description": "Relevance score (0-1)"
+                },
+                "chunk_id": {
+                  "type": "string",
+                  "description": "Unique chunk identifier"
+                }
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "total_results": {"type": "integer"},
+              "query_time_ms": {"type": "integer"},
+              "clusters_searched": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "RAG_SERVICE_UNAVAILABLE",
+              "INVALID_QUERY",
+              "NO_RESULTS_FOUND",
+              "EMBEDDING_GENERATION_FAILED"
+            ]
+          },
+          "message": {"type": "string"},
+          "retry_after": {"type": "integer", "description": "Seconds to wait before retry"}
+        }
+      }
+    },
+    {
+      "name": "save_journal_entry",
+      "description": "Save journaling entry to database with encryption, auto-save support, and privacy controls. Handles partial entries (auto-save) and complete entries (finalized).",
+      "provider": "Journaling Station Service (Port 8140)",
+      "inputs": {
+        "type": "object",
+        "required": ["session_id", "content"],
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Journaling session ID"
+          },
+          "content": {
+            "type": "string",
+            "description": "Journaling entry text (plaintext, will be encrypted)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "auto_save", "completed", "timed_out"],
+            "default": "auto_save"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "word_count": {"type": "integer"},
+              "duration_seconds": {"type": "integer"},
+              "technique": {"type": "string"},
+              "auto_save_number": {"type": "integer"}
+            }
+          },
+          "sensitivity_level": {
+            "type": "string",
+            "enum": ["standard", "high", "crisis"],
+            "default": "standard",
+            "description": "Determines encryption strength and access controls"
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["artifact_id", "saved_at"],
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique artifact ID"
+          },
+          "saved_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "encrypted": {
+            "type": "boolean",
+            "description": "Confirms encryption applied"
+          },
+          "storage_location": {
+            "type": "string",
+            "description": "MinIO or database location"
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "DATABASE_WRITE_FAILED",
+              "ENCRYPTION_FAILED",
+              "INVALID_SESSION_ID",
+              "CONTENT_TOO_LARGE"
+            ]
+          },
+          "message": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "create_session_plan",
+      "description": "Generate personalized journaling session plan based on client profile, E&P suggestibility, presenting issue, and historical themes. Used for technique selection and between-sessions scheduling.",
+      "provider": "Journaling Station Service (Port 8140)",
+      "inputs": {
+        "type": "object",
+        "required": ["user_id"],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ep_profile": {
+            "type": "object",
+            "required": ["physical_percentage", "classification"],
+            "properties": {
+              "physical_percentage": {"type": "number", "minimum": 0, "maximum": 100},
+              "emotional_percentage": {"type": "number", "minimum": 0, "maximum": 100},
+              "classification": {"type": "string", "enum": ["Physical", "Emotional", "Hybrid"]}
+            }
+          },
+          "presenting_issue": {
+            "type": "string",
+            "enum": [
+              "relationships",
+              "career",
+              "self_worth",
+              "trauma",
+              "anxiety",
+              "depression",
+              "life_transition"
+            ]
+          },
+          "session_number": {
+            "type": "integer",
+            "description": "Therapy session number (affects complexity)"
+          },
+          "recent_themes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Recurring themes from past journaling"
+          },
+          "safety_status": {
+            "type": "string",
+            "enum": ["green", "yellow", "red"]
+          },
+          "therapist_override": {
+            "type": "object",
+            "properties": {
+              "technique": {"type": "string"},
+              "rationale": {"type": "string"}
+            }
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["technique", "technique_config", "confidence"],
+        "properties": {
+          "technique": {
+            "type": "string",
+            "enum": [
+              "sprint",
+              "unsent_letter",
+              "sentence_stems",
+              "inventory",
+              "list_of_100",
+              "non_dominant_hand",
+              "dialogue",
+              "springboard"
+            ]
+          },
+          "technique_config": {
+            "type": "object",
+            "properties": {
+              "timebox_minutes": {"type": "integer", "minimum": 5, "maximum": 40},
+              "recipient": {"type": "string", "description": "For unsent_letter"},
+              "tone": {"type": "string", "description": "Language tone adaptation"},
+              "language_style": {"type": "string", "enum": ["direct_literal", "inferential_permissive"]},
+              "timebox_strict": {"type": "boolean"}
+            }
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "AI confidence in technique selection"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Human-readable explanation of selection"
+          },
+          "between_sessions_schedule": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "day": {"type": "integer", "description": "Days after session"},
+                "technique": {"type": "string"},
+                "duration_minutes": {"type": "integer"}
+              }
+            }
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "USER_NOT_FOUND",
+              "EP_PROFILE_MISSING",
+              "TECHNIQUE_SELECTION_FAILED"
+            ]
+          },
+          "message": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "generate_xr_scene_spec",
+      "description": "Generate VR/XR scene specification for immersive journaling experience. Includes environment, lighting, spatial audio, camera paths, and interaction hotspots.",
+      "provider": "XR Scene Director Service (Port 8353)",
+      "inputs": {
+        "type": "object",
+        "required": ["environment_id", "journaling_context"],
+        "properties": {
+          "environment_id": {
+            "type": "string",
+            "enum": [
+              "cozy_cabin",
+              "beach_sunset",
+              "forest_clearing",
+              "mountain_vista",
+              "inner_sanctuary"
+            ]
+          },
+          "journaling_context": {
+            "type": "string",
+            "enum": [
+              "pre_vr_intention",
+              "post_vr_reflection",
+              "between_sessions",
+              "bilateral_drawing"
+            ]
+          },
+          "technique": {
+            "type": "string",
+            "description": "Journaling technique for scene adaptation"
+          },
+          "user_preferences": {
+            "type": "object",
+            "properties": {
+              "lighting_brightness": {"type": "number", "minimum": 0, "maximum": 1},
+              "audio_volume": {"type": "number", "minimum": 0, "maximum": 1},
+              "spatial_audio_enabled": {"type": "boolean", "default": true}
+            }
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["scene_spec"],
+        "properties": {
+          "scene_spec": {
+            "type": "object",
+            "properties": {
+              "environment": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "string"},
+                  "name": {"type": "string"},
+                  "asset_bundle_url": {"type": "string"}
+                }
+              },
+              "lighting": {
+                "type": "object",
+                "properties": {
+                  "mode": {"type": "string", "enum": ["ambient", "fireplace", "sunset", "moonlight"]},
+                  "brightness": {"type": "number"},
+                  "color_temperature": {"type": "number"}
+                }
+              },
+              "spatial_audio": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "audio_element": {"type": "string"},
+                    "position": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+                    "volume": {"type": "number"},
+                    "loop": {"type": "boolean"}
+                  }
+                }
+              },
+              "camera": {
+                "type": "object",
+                "properties": {
+                  "initial_position": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+                  "initial_rotation": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+                  "movement_mode": {"type": "string", "enum": ["static", "orbit", "rails"]}
+                }
+              },
+              "interaction_hotspots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "string"},
+                    "position": {"type": "array", "items": {"type": "number"}},
+                    "action": {"type": "string", "enum": ["journal", "grounding", "exit"]},
+                    "gaze_dwell_seconds": {"type": "number"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "ENVIRONMENT_NOT_FOUND",
+              "ASSET_BUNDLE_UNAVAILABLE",
+              "INVALID_SCENE_CONFIG"
+            ]
+          },
+          "message": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "render_tts",
+      "description": "Generate text-to-speech audio for journaling prompts, guideposts, and Sophia avatar narration. Uses ElevenLabs for emotional range. Supports caching for common phrases.",
+      "provider": "TTS Service (Port 8136)",
+      "inputs": {
+        "type": "object",
+        "required": ["text", "voice_id"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Text to convert to speech"
+          },
+          "voice_id": {
+            "type": "string",
+            "enum": ["sophia", "narrator", "grounding_guide"],
+            "description": "Voice character"
+          },
+          "ssml": {
+            "type": "string",
+            "description": "SSML markup for prosody control (optional)"
+          },
+          "emotion": {
+            "type": "string",
+            "enum": ["calm", "warm", "compassionate", "neutral"],
+            "default": "calm"
+          },
+          "cache_enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Check TTS cache before generating"
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["audio_url", "duration_seconds"],
+        "properties": {
+          "audio_url": {
+            "type": "string",
+            "description": "MinIO presigned URL or CDN URL"
+          },
+          "duration_seconds": {
+            "type": "number"
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Was this served from cache?"
+          },
+          "cache_key": {
+            "type": "string",
+            "description": "SHA-256 hash for caching"
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "TTS_SERVICE_UNAVAILABLE",
+              "ELEVENLABS_QUOTA_EXCEEDED",
+              "INVALID_SSML",
+              "TEXT_TOO_LONG"
+            ]
+          },
+          "message": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "evaluate_response",
+      "description": "LLM-powered analysis of journaling entry. Extracts themes, sentiment, action items, and detects patterns. Used in Reflection state.",
+      "provider": "Journaling Station Service (Port 8140)",
+      "inputs": {
+        "type": "object",
+        "required": ["entry_text", "technique"],
+        "properties": {
+          "entry_text": {
+            "type": "string",
+            "description": "Full journaling entry content"
+          },
+          "technique": {
+            "type": "string",
+            "description": "Journaling technique used"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "For historical pattern detection"
+          },
+          "max_themes": {
+            "type": "integer",
+            "default": 5,
+            "minimum": 1,
+            "maximum": 10
+          },
+          "include_sentiment": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_action_items": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_patterns": {
+            "type": "boolean",
+            "default": true,
+            "description": "Compare to historical themes"
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["themes"],
+        "properties": {
+          "themes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "theme": {"type": "string"},
+                "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                "excerpts": {"type": "array", "items": {"type": "string"}}
+              }
+            }
+          },
+          "sentiment": {
+            "type": "object",
+            "properties": {
+              "score": {"type": "number", "minimum": -1, "maximum": 1},
+              "emotions": {
+                "type": "object",
+                "properties": {
+                  "joy": {"type": "number"},
+                  "sadness": {"type": "number"},
+                  "anger": {"type": "number"},
+                  "fear": {"type": "number"},
+                  "surprise": {"type": "number"}
+                }
+              },
+              "description": {"type": "string"}
+            }
+          },
+          "action_items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "action": {"type": "string"},
+                "priority": {"type": "string", "enum": ["high", "medium", "low"]},
+                "smart_goal": {"type": "boolean"}
+              }
+            }
+          },
+          "patterns": {
+            "type": "object",
+            "properties": {
+              "recurring": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Themes seen 3+ times in past 10 sessions"
+              },
+              "new": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "First-time themes"
+              },
+              "resolved": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Themes no longer appearing"
+              }
+            }
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "LLM_TIMEOUT",
+              "ENTRY_TOO_SHORT",
+              "THEME_EXTRACTION_FAILED",
+              "SENTIMENT_ANALYSIS_FAILED"
+            ]
+          },
+          "message": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "safety_screen",
+      "description": "Multi-signal crisis detection. Analyzes user input, session context, and behavioral patterns for suicide ideation, self-harm, harm to others, or severe distress. ALWAYS runs FIRST before any journaling activity.",
+      "provider": "Safety Guardian Service (Port 8005)",
+      "inputs": {
+        "type": "object",
+        "required": ["user_id", "context"],
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "context": {
+            "type": "string",
+            "enum": [
+              "journaling_initiation",
+              "mid_exercise_check",
+              "post_session",
+              "between_sessions"
+            ]
+          },
+          "user_input": {
+            "type": "string",
+            "description": "Latest user message or entry content (optional)"
+          },
+          "session_context": {
+            "type": "object",
+            "properties": {
+              "recent_journaling_sessions": {"type": "integer"},
+              "last_safety_status": {"type": "string"},
+              "recent_themes": {"type": "array", "items": {"type": "string"}},
+              "sentiment_trend": {
+                "type": "string",
+                "enum": ["improving", "stable", "declining"]
+              },
+              "recent_triggers": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        }
+      },
+      "outputs": {
+        "type": "object",
+        "required": ["status", "crisis_level"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["green", "yellow", "red"]
+          },
+          "crisis_level": {
+            "type": "string",
+            "enum": ["none", "low", "medium", "severe"]
+          },
+          "detection_signals": {
+            "type": "object",
+            "properties": {
+              "explicit_ideation": {"type": "boolean"},
+              "behavioral_change": {"type": "boolean"},
+              "sentiment_drop": {"type": "boolean"},
+              "recent_triggers": {"type": "boolean"}
+            }
+          },
+          "constraints": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Safety constraints to apply (e.g., 'no_unsent_letter', 'gentle_pacing')"
+          },
+          "recommended_action": {
+            "type": "string",
+            "enum": [
+              "proceed_normal",
+              "proceed_modified",
+              "offer_grounding",
+              "escalate_hitl",
+              "block_session"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "errors": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "SAFETY_SERVICE_UNAVAILABLE",
+              "USER_CONTEXT_UNAVAILABLE",
+              "ANALYSIS_TIMEOUT"
+            ]
+          },
+          "message": {"type": "string"},
+          "fallback_status": {
+            "type": "string",
+            "enum": ["yellow"],
+            "description": "Default to Code Yellow on service failure (conservative)"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                    SESSION ORCHESTRATION STATE MACHINE               │
+└─────────────────────────────────────────────────────────────────────┘
+
+States:
+[IDLE] → [PLANNED] → [INTAKE] → [PRE_INDUCTION] → [ASSESSMENT] → 
+[THEORY_OF_MIND] → [INDUCTION] → [DEEPENING] → [SUGGESTIONS] → 
+[POST_HYPNOTIC] → [EMERGENCE] → [COMPLETED]
+
+                                    ╔══════════╗
+                                    ║   IDLE   ║
+                                    ╚═════╤════╝
+                                          │
+                                          │ user_starts_session
+                                          │ / create_session_record()
+                                          │
+                                    ╔═════▼════╗
+                                    ║ PLANNED  ║
+                                    ╚═════╤════╝
+                                          │
+                                          │ session_scheduled
+                                          │ / notify_user()
+                                          │
+                                    ╔═════▼════╗
+                       ┌────────────║  INTAKE  ║
+                       │            ╚═════╤════╝
+                       │                  │
+                       │                  │ intake_complete
+                       │                  │ [has_profile] / load_profile()
+                       │                  │
+                       │            ╔═════▼════════════╗
+                       │            ║  PRE_INDUCTION   ║
+                       │            ╚═════╤════════════╝
+                       │                  │
+                       │                  │ pre_induction_complete
+                       │                  │ [needs_assessment] / start_assessment()
+                       │                  │ [has_assessment] / skip_to_tom()
+                       │                  │
+                       │            ╔═════▼═══════════╗
+                       │            ║   ASSESSMENT    ║◄──┐
+                       │            ╠═════════════════╣   │
+                       │            ║ Sub-states:     ║   │
+                       │            ║ • Suggestibility║   │
+                       │            ║ • E&P Sexuality ║   │ pause_requested
+                       │            ║ • Wheel of Life ║   │ / save_progress()
+                       │            ╚═════╤═══════════╝   │
+                       │                  │                │
+                       │                  │ assessment_complete  │
+                       │ pause_requested  │ / generate_profile() │
+                       │ / save_state()   │                      │
+                       │                  │                      │
+                       │            ╔═════▼═════════════╗        │
+                       └───────────►║     PAUSED        ║────────┘
+                                    ║                   ║
+                                    ║ • User can resume │
+                                    ║ • Auto-resume     │
+                                    ║   after timeout   │
+                                    ╚═════╤═════════════╝
+                                          │
+                                          │ resume_requested
+                                          │ / restore_state()
+                                          │
+                                    ╔═════▼══════════════╗
+                                    ║ THEORY_OF_MIND     ║
+                                    ╚═════╤══════════════╝
+                                          │
+                                          │ tom_complete
+                                          │ [safety_check_passed] / begin_hypnosis()
+                                          │
+                      ┌───────────────────┼────────────────────┐
+                      │                   │                    │
+              [contraindication]  ╔═════▼═════════╗   [safety_approved]
+              / escalate()        ║   INDUCTION   ║
+                      │           ╠═══════════════╣
+                      │           ║ • Arm raising ║
+                      │           ║ • PHS install ║
+                      │           ║ • Biometric   ║
+                      │           ║   monitoring  ║
+                      │           ╚═════╤═════════╝
+                      │                 │
+                      │                 │ induction_complete
+                      │                 │ [depth_adequate] / proceed_deepening()
+                      │                 │
+                      │           ╔═════▼═════════╗
+                      │           ║  DEEPENING    ║
+                      │           ╠═══════════════╣
+                      │           ║ • Progressive ║
+                      │           ║ • Staircase   ║
+                      │           ║ • Challenges  ║
+                      │           ╚═════╤═════════╝
+                      │                 │
+                      │                 │ deepening_complete
+                      │                 │ [user_responsive] / deliver_suggestions()
+                      │                 │
+                      │           ╔═════▼══════════════╗
+                      │           ║   SUGGESTIONS      ║◄──┐
+                      │           ╠════════════════════╣   │
+                      │           ║ • Goal-based       ║   │
+                      │           ║ • Identity shift   ║   │ high_stress_detected
+                      │           ║ • Habit formation  ║   │ / insert_calming()
+                      │           ║ • Adaptive         ║   │
+                      │           ╚═════╤══════════════╝   │
+                      │                 │                  │
+                      │                 │ suggestions_complete
+                      │                 │ / prepare_emergence()
+                      │                 │
+                      │           ╔═════▼══════════════╗
+                      │           ║  POST_HYPNOTIC     ║
+                      │           ╠════════════════════╣
+                      │           ║ • Reinforce PHS    ║
+                      │           ║ • Dream therapy    ║
+                      │           ╚═════╤══════════════╝
+                      │                 │
+                      │                 │ phs_complete
+                      │                 │ / begin_emergence()
+                      │                 │
+                      │           ╔═════▼══════════════╗
+                      │           ║   EMERGENCE        ║
+                      │           ╠════════════════════╣
+                      │           ║ • Count up 0-5     ║
+                      │           ║ • Eyes open        ║
+                      │           ║ • Wide awake       ║
+                      │           ╚═════╤══════════════╝
+                      │                 │
+                      │                 │ emergence_complete
+                      │                 │ / finalize_session()
+                      │                 │
+                      │           ╔═════▼══════════════╗
+                      │           ║   COMPLETED        ║
+                      │           ╠════════════════════╣
+                      │           ║ • Store session    ║
+                      │           ║ • Generate report  ║
+                      │           ║ • Schedule next    ║
+                      │           ╚════════════════════╝
+                      │
+                      │
+                ╔═════▼═════════╗
+                ║   ESCALATED   ║
+                ╠═══════════════╣
+                ║ • Emergency   ║
+                ║   emergence   ║
+                ║ • Alert human ║
+                ║ • Log incident║
+                ╚═══════════════╝
+
+Guards (Conditions):
+- [has_profile]: User has completed assessments
+- [needs_assessment]: First-time user
+- [safety_check_passed]: No contraindications detected
+- [depth_adequate]: User reached appropriate hypnotic depth
+- [user_responsive]: User responding to suggestions
+- [contraindication]: Safety issue detected
+
+Actions (Side effects):
+- create_session_record(): Initialize session in database
+- load_profile(): Retrieve user's unified profile
+- generate_profile(): Create unified profile from assessments
+- begin_hypnosis(): Activate biometric monitoring, safety protocols
+- insert_calming(): Inject calming technique mid-session
+- finalize_session(): Store data, generate analytics
+- escalate(): Emergency protocol, notify human therapist

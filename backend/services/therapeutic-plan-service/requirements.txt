@@ -1,0 +1,10 @@
+# 5D Therapeutic Plan Service Requirements
+
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+python-dotenv==1.0.0
+
+# Optional - for real integrations
+# anthropic  # For Custom Hypno LLM
+# httpx      # For Epic 6/7/8 API calls

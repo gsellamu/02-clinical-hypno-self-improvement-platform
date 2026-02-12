@@ -1,0 +1,75 @@
+sequenceDiagram
+    participant User
+    participant WebApp
+    participant BiometricSvc as Biometric Service
+    participant Safety as Safety Guardian
+    participant Orchestrator as Session Orchestrator
+    participant RL as RL Adaptation Agent
+    participant Voice as Voice Synthesis
+
+    Note over User,Voice: During active hypnosis session
+    
+    loop Every 1 second
+        User->>WebApp: Biometric data (wearable/webcam)
+        Note over User,WebApp: HR: 95 bpm<br/>HRV: 45ms<br/>GSR: 0.65<br/>Respiration: 14/min
+        
+        WebApp->>BiometricSvc: POST /biometric/reading
+        BiometricSvc->>BiometricSvc: Store in time-series DB
+        BiometricSvc->>BiometricSvc: Calculate trends (5-sec window)
+        
+        BiometricSvc->>Safety: Analyze current state
+        Safety->>Safety: Calculate stress score (0-1)
+        Safety->>Safety: Check against thresholds
+        
+        alt Normal state (stress < 0.7)
+            Safety->>Orchestrator: Status: Normal, continue
+            Orchestrator->>WebApp: No changes needed
+        
+        else Elevated state (0.7 < stress < 0.9)
+            Safety->>Orchestrator: Alert: Elevated stress
+            Note over Safety: HR: 110, GSR: 0.85
+            
+            Orchestrator->>RL: Adapt script for elevated state
+            RL->>RL: Calculate optimal adaptation
+            Note over RL: Options:<br/>1. Slow pacing 10%<br/>2. Add misdirection<br/>3. Insert calming breath cue
+            
+            RL-->>Orchestrator: Adaptation plan
+            Orchestrator->>Voice: Adjust voice parameters
+            Note over Orchestrator,Voice: Pace: -10%<br/>Pitch: -5%<br/>Volume: -3dB
+            Voice-->>Orchestrator: Updated audio config
+            
+            Orchestrator->>WebApp: WS: script_adaptation
+            WebApp->>User: Apply changes (smoother delivery)
+            
+            Orchestrator->>BiometricSvc: Log adaptation event
+        
+        else High stress (stress >= 0.9)
+            Safety->>Orchestrator: ALERT: High stress - pause suggestions
+            
+            Orchestrator->>RL: Emergency adaptation
+            RL->>RL: Select calming intervention
+            RL-->>Orchestrator: Insert breathing exercise
+            
+            Orchestrator->>Voice: Generate calming script
+            Note over Voice: "Take a moment to breathe deeply...<br/>In through your nose...out through your mouth..."
+            Voice-->>Orchestrator: Calming audio
+            
+            Orchestrator->>WebApp: WS: emergency_intervention
+            WebApp->>User: Pause current script, play intervention
+            
+            Orchestrator->>BiometricSvc: Log high-stress event
+            Orchestrator->>Safety: Monitor for improvement
+            
+            alt If stress decreases
+                Safety->>Orchestrator: Stress reducing, resume
+                Orchestrator->>WebApp: Resume main script
+            else If stress persists > 60 seconds
+                Safety->>Orchestrator: ESCALATE: Unable to calm
+                Orchestrator->>Orchestrator: Initiate emergency emergence
+                Orchestrator->>WebApp: WS: emergency_emergence
+                WebApp->>User: Rapid count-up procedure
+                Orchestrator->>Orchestrator: Flag for human review
+            end
+        end
+    end
+    

@@ -1,0 +1,262 @@
+sequenceDiagram
+    participant User
+    participant WebApp as React Web App
+    participant API as FastAPI Backend
+    participant Auth as Auth Service
+    participant Assessment as Assessment Service
+    participant Orchestrator as Session Orchestrator
+    participant RAG as RAG Engine
+    participant Agents as Multi-Agent Crew
+    participant Safety as Safety Guardian
+    participant VectorDB as Vector DB
+    participant GraphDB as Neo4j Graph
+    participant LLM as Custom Hypnosis LLM
+    participant Voice as Voice Synthesis
+
+    User->>WebApp: Visit platform, click "Start"
+    WebApp->>API: POST /api/v1/auth/register
+    API->>Auth: Create user account
+    Auth-->>API: User ID, JWT token
+    API-->>WebApp: Auth token, redirect to dashboard
+    
+    Note over WebApp,User: INTAKE PHASE
+    WebApp->>User: Display onboarding questions
+    User->>WebApp: Submit goals, concerns
+    WebApp->>API: POST /api/v1/intake
+    API-->>WebApp: Intake ID
+    
+    Note over WebApp,User: WHEEL OF HAPPINESS
+    WebApp->>User: Display Wheel of Happiness
+    User->>WebApp: Rate 8 life areas (1-10)
+    WebApp->>API: POST /api/v1/wheel-of-happiness
+    API->>Assessment: Calculate bumpiness, priorities
+    Assessment->>GraphDB: Store wheel data, link to goals
+    Assessment-->>API: Priority areas [career, money, health]
+    API-->>WebApp: Visual feedback, top priorities
+    
+    Note over WebApp,User: SUGGESTIBILITY ASSESSMENT
+    WebApp->>User: Display questionnaire instructions
+    User->>WebApp: Begin assessment
+    
+    loop For each question (1-36)
+        WebApp->>User: Display question with helper panel
+        User->>WebApp: Provide answer (yes/no)
+        WebApp->>API: POST /api/v1/assessment/response (auto-save)
+    end
+    
+    WebApp->>API: POST /api/v1/assessment/complete
+    API->>Assessment: Calculate suggestibility scores
+    Assessment->>Assessment: Q1 score (questions 1-2: 10pts, 3-18: 5pts)
+    Assessment->>Assessment: Q2 score (all questions: 5pts)
+    Assessment->>Assessment: Combined score = Q1 + Q2
+    Assessment->>Assessment: Graph lookup (combined, Q1) -> Physical %
+    Assessment->>Assessment: Emotional % = 100 - Physical %
+    Assessment-->>API: Suggestibility profile
+    
+    alt If user has VR headset
+        WebApp->>User: "Would you like to try finger-spreading test in VR?"
+        User->>WebApp: Accept
+        WebApp->>WebApp: Initialize WebXR session
+        WebApp->>User: Display VR instructions
+        User->>WebApp: Perform test (left arm - direct suggestions)
+        WebApp->>API: Stream hand tracking data
+        API->>Assessment: Analyze finger movement (speed, distance, latency)
+        User->>WebApp: Perform test (right arm - inferred suggestions)
+        WebApp->>API: Stream hand tracking data
+        API->>Assessment: Compare left vs right responses
+        Assessment->>Assessment: Classify as Physical/Emotional
+        Assessment-->>API: ML-based suggestibility (confidence score)
+        API->>Assessment: Combine questionnaire + ML results
+    end
+    
+    Assessment->>GraphDB: CREATE (user)-[:HAS_SUGGESTIBILITY]->(profile)
+    API-->>WebApp: Final suggestibility profile
+    WebApp->>User: Show results with visualization
+    
+    Note over WebApp,User: PRE-INDUCTION SPEECH
+    WebApp->>API: POST /api/v1/sessions/create
+    API->>Orchestrator: Initialize first session
+    Orchestrator->>Safety: Pre-session screening
+    Safety->>GraphDB: Check contraindications
+    GraphDB-->>Safety: No contraindications found
+    Safety-->>Orchestrator: Approved to proceed
+    
+    Orchestrator->>Agents: Generate pre-induction speech
+    Agents->>RAG: Retrieve HMI pre-induction template
+    RAG->>VectorDB: Query "pre-induction speech + myth dispelling"
+    VectorDB-->>RAG: Top 3 relevant chunks
+    Agents->>LLM: Personalize for user profile
+    LLM-->>Agents: Personalized pre-induction script
+    Agents-->>Orchestrator: Pre-induction segment
+    
+    Orchestrator->>Voice: Synthesize speech (warm, professional voice)
+    Voice-->>Orchestrator: Audio file
+    Orchestrator->>API: Segment ready
+    API-->>WebApp: Pre-induction audio + script
+    WebApp->>User: Play audio with on-screen text
+    
+    Note over WebApp,User: THEORY OF MIND EDUCATION
+    Orchestrator->>Agents: Generate Theory of Mind explanation
+    Agents->>RAG: Retrieve TOM script template
+    RAG->>VectorDB: Query "theory of mind education"
+    VectorDB-->>RAG: TOM diagram script
+    Agents->>LLM: Personalize to user's goal (e.g., career success)
+    LLM-->>Agents: Personalized TOM script
+    Agents-->>Orchestrator: TOM segment with diagram
+    
+    Orchestrator->>API: TOM segment ready
+    API-->>WebApp: TOM script + diagram data
+    WebApp->>User: Display animated TOM diagram with narration
+    User->>WebApp: "I understand" (confirmation)
+    
+    Note over WebApp,User: ARM RAISING INDUCTION
+    Orchestrator->>Safety: Continuous monitoring begins
+    Orchestrator->>Agents: Generate induction
+    
+    Agents->>GraphDB: MATCH (user)-[:HAS_SUGGESTIBILITY]->(s {type: 'emotional'})
+    GraphDB-->>Agents: Emotional suggestibility confirmed
+    
+    Agents->>RAG: Retrieve "emotional arm raising induction"
+    RAG->>VectorDB: Semantic search (emotional + induction + first session)
+    VectorDB-->>RAG: Top 5 script variations
+    
+    Agents->>LLM: Synthesize personalized induction
+    Note over Agents,LLM: Uses inferential language:<br/>"allowing", "tendency",<br/>"as you begin to feel"
+    LLM-->>Agents: Personalized induction script
+    
+    Agents->>Safety: Validate script for safety
+    Safety->>Safety: Check for harmful suggestions
+    Safety->>Safety: Verify emergence procedure included
+    Safety-->>Agents: Approved
+    
+    Agents-->>Orchestrator: Induction segment
+    Orchestrator->>Voice: Synthesize (slower pace, soothing voice)
+    Voice-->>Orchestrator: Audio file
+    Orchestrator->>API: Induction ready
+    API-->>WebApp: Induction audio + biometric monitoring start
+    
+    WebApp->>User: Begin induction (5-4-3-2-1-0 Deep Sleep)
+    
+    loop Real-time adaptation
+        User->>WebApp: Biometric data (HR, HRV, GSR via wearable/webcam)
+        WebApp->>API: Stream biometric readings
+        API->>Safety: Analyze user state
+        
+        alt If high stress detected (HR > 120, GSR > 0.9)
+            Safety->>Orchestrator: Alert - elevated stress
+            Orchestrator->>Agents: Modify script - add calming techniques
+            Agents-->>Orchestrator: Adjusted script segment
+            Orchestrator->>API: Send adjustment
+            API-->>WebApp: Update delivery (slower pace, misdirection)
+        end
+        
+        alt If too deep too fast (no response > 5 sec)
+            Safety->>Orchestrator: Alert - possible excessive depth
+            Orchestrator->>Agents: Lighten suggestions, check responsiveness
+        end
+    end
+    
+    Note over WebApp,User: DEEPENING TECHNIQUES
+    Orchestrator->>Agents: Generate deepening sequence
+    Agents->>RAG: Retrieve deepening techniques
+    RAG->>VectorDB: Query "progressive relaxation + staircase"
+    VectorDB-->>RAG: Deepening scripts
+    Agents->>LLM: Personalize sequence
+    LLM-->>Agents: Personalized deepening
+    Agents-->>Orchestrator: Deepening segments
+    
+    Orchestrator->>Voice: Synthesize (even slower, deeper voice)
+    Voice-->>Orchestrator: Audio files
+    Orchestrator->>API: Deepening ready
+    API-->>WebApp: Deepening audio
+    WebApp->>User: Play deepening sequence
+    
+    Note over WebApp,User: THERAPEUTIC SUGGESTIONS
+    Orchestrator->>Agents: Generate suggestions for goals
+    
+    Agents->>GraphDB: MATCH (user)-[:HAS_GOAL]->(g:Goal {category: 'career'})
+    GraphDB-->>Agents: Career goal + related habits
+    
+    Agents->>GraphDB: MATCH (user)-[:HAS_SEXUALITY]->(s:Sexuality)
+    GraphDB-->>Agents: Physical sexuality (70%)
+    
+    Note over Agents: Physical sexuality prioritizes:<br/>Connection, relationships, acceptance
+    
+    Agents->>RAG: Query "career success + physical sexuality + habit formation"
+    RAG->>VectorDB: Hybrid search
+    RAG->>GraphDB: Graph traversal for related suggestions
+    VectorDB-->>RAG: Suggestion templates
+    GraphDB-->>RAG: Identity statements, habit loops
+    
+    Agents->>LLM: Synthesize personalized suggestions
+    Note over Agents,LLM: Emphasize connection & relationships:<br/>"You feel confident connecting with others,<br/>sharing your expertise naturally..."
+    LLM-->>Agents: Personalized therapeutic suggestions
+    
+    Agents->>Safety: Validate suggestions
+    Safety-->>Agents: Approved
+    Agents-->>Orchestrator: Suggestion segments
+    
+    Orchestrator->>Voice: Synthesize (confident, affirming tone)
+    Voice-->>Orchestrator: Audio files
+    Orchestrator->>API: Suggestions ready
+    API-->>WebApp: Suggestion audio
+    WebApp->>User: Play therapeutic suggestions
+    
+    Note over WebApp,User: POST-HYPNOTIC SUGGESTION
+    Orchestrator->>Agents: Generate PHS for re-hypnosis
+    Agents->>RAG: Retrieve PHS template
+    RAG->>VectorDB: Query "post hypnotic suggestion deep sleep"
+    VectorDB-->>RAG: PHS script
+    Agents-->>Orchestrator: PHS segment
+    Orchestrator->>Voice: Synthesize
+    Voice-->>Orchestrator: Audio
+    Orchestrator->>API: PHS ready
+    API-->>WebApp: PHS audio
+    WebApp->>User: "Each time I suggest Deep Sleep..."
+    
+    Note over WebApp,User: EMERGENCE
+    Orchestrator->>Agents: Generate emergence procedure
+    Agents->>RAG: Retrieve emergence script
+    RAG->>VectorDB: Query "emergence 0-5 count up"
+    VectorDB-->>RAG: Emergence script
+    Agents-->>Orchestrator: Emergence segment
+    Orchestrator->>Voice: Synthesize (energizing, clear voice)
+    Voice-->>Orchestrator: Audio
+    Orchestrator->>API: Emergence ready
+    API-->>WebApp: Emergence audio
+    WebApp->>User: Count up 0-1-2-3-4-5 eyes open, wide awake
+    
+    User->>WebApp: Session complete, eyes open
+    WebApp->>API: POST /api/v1/sessions/{id}/complete
+    API->>Orchestrator: Finalize session
+    Orchestrator->>GraphDB: Store session graph
+    Orchestrator->>API: Session summary
+    API-->>WebApp: Session data, next steps
+    
+    Note over WebApp,User: IMMEDIATE RE-INDUCTION TEST
+    WebApp->>User: "Let's test the post-hypnotic suggestion"
+    WebApp->>User: Display finger-spreading setup
+    User->>WebApp: Perform finger-spreading
+    WebApp->>API: Suggest "Deep Sleep" trigger
+    API->>Voice: Synthesize "Deep Sleep"
+    Voice-->>API: Audio
+    API-->>WebApp: Trigger audio
+    WebApp->>User: Play "Deep Sleep"
+    User->>WebApp: Rapid re-induction (hand to forehead)
+    WebApp->>User: Count up 0-5 again
+    
+    WebApp->>API: POST /api/v1/sessions/{id}/phs-test-complete
+    API-->>WebApp: PHS validated
+    
+    Note over WebApp,User: HOMEWORK ASSIGNMENT
+    WebApp->>User: "Complete E&P assessment for next session"
+    User->>WebApp: Accept homework
+    WebApp->>API: POST /api/v1/homework/assign
+    
+    Note over WebApp,User: SCHEDULE NEXT SESSION
+    WebApp->>User: Display calendar
+    User->>WebApp: Select date/time
+    WebApp->>API: POST /api/v1/sessions/schedule
+    API-->>WebApp: Session #2 scheduled
+    WebApp->>User: Confirmation + summary email
+    

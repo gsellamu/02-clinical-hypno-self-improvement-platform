@@ -1,0 +1,228 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│              MULTI-AGENT COLLABORATION STATE MACHINE                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+                        ╔═════════════════════╗
+                        ║   AGENT_IDLE        ║
+                        ╚═══════════╤═════════╝
+                                    │
+                                    │ session_request_received
+                                    │ / load_user_profile()
+                                    │
+                        ╔═══════════▼═════════╗
+                        ║  STRATEGIC_PLANNING ║
+                        ╠═════════════════════╣
+                        ║ Agents Active:      ║
+                        ║ • SessionPlanner    ║
+                        ║ • SafetyOverseer    ║
+                        ╚═══════════╤═════════╝
+                                    │
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+    ╔═════════▼═════════╗ ╔════════▼═════════╗ ╔════════▼═════════╗
+    ║ PLANNER_ANALYZING ║ ║ SAFETY_CHECKING  ║ ║ RAG_QUERYING     ║
+    ╠═══════════════════╣ ╠══════════════════╣ ╠══════════════════╣
+    ║ • Analyze profile ║ ║ • Check contra-  ║ ║ • Query graph    ║
+    ║ • Identify goals  ║ ║   indications    ║ ║ • Retrieve       ║
+    ║ • Prioritize      ║ ║ • Review history ║ ║   protocols      ║
+    ║ • Create strategy ║ ║ • Validate safety║ ║ • Find patterns  ║
+    ╚═════════╤═════════╝ ╚════════╤═════════╝ ╚════════╤═════════╝
+              │                     │                     │
+              │                     │                     │
+              └─────────────────────┼─────────────────────┘
+                                    │
+                                    │ [all_checks_pass]
+                                    │ / create_session_plan()
+                                    │
+                        ╔═══════════▼══════════════╗
+                        ║  STRATEGY_APPROVED       ║
+                        ╠══════════════════════════╣
+                        ║ Session Plan:            ║
+                        ║ • Induction type         ║
+                        ║ • Deepening sequence     ║
+                        ║ • Suggestion themes      ║
+                        ║ • Safety protocols       ║
+                        ║ • Estimated duration     ║
+                        ╚═══════════╤══════════════╝
+                                    │
+                                    │ begin_tactical_generation
+                                    │ / activate_crew()
+                                    │
+                        ╔═══════════▼══════════════╗
+                        ║  CREW_INITIALIZATION     ║
+                        ╠══════════════════════════╣
+                        ║ • Load session plan      ║
+                        ║ • Assign tasks to agents ║
+                        ║ • Set up communication   ║
+                        ╚═══════════╤══════════════╝
+                                    │
+                                    │ crew_ready
+                                    │
+                        ╔═══════════▼══════════════╗
+                        ║  INDUCTION_GENERATION    ║
+                        ╠══════════════════════════╣
+                        ║ Agent: InductionComposer ║
+                        ║                          ║
+                        ║ Sub-states:              ║
+                        ║ ┌──────────────────────┐ ║
+                        ║ │ TOOL_CALLING         │ ║
+                        ║ │ • MCP: retrieve_ind. │ ║
+                        ║ │ • RAG: query vectors │ ║
+                        ║ └──────────┬───────────┘ ║
+                        ║            │             ║
+                        ║ ┌──────────▼───────────┐ ║
+                        ║ │ LLM_SYNTHESIS        │ ║
+                        ║ │ • Personalize script │ ║
+                        ║ │ • Apply E/P patterns │ ║
+                        ║ └──────────┬───────────┘ ║
+                        ║            │             ║
+                        ║ ┌──────────▼───────────┐ ║
+                        ║ │ SAFETY_VALIDATION    │ ║
+                        ║ │ • Check harmful      │ ║
+                        ║ │ • Verify structure   │ ║
+                        ║ └──────────┬───────────┘ ║
+                        ║            │             ║
+                        ╚════════════╪═════════════╝
+                                     │
+                        [validation_pass] │ [validation_fail]
+                                     │         │
+                        ┌────────────┴─────────┴────────────┐
+                        │                                    │
+            ╔═══════════▼═════════╗           ╔═════════════▼══════════╗
+            ║ INDUCTION_APPROVED  ║           ║ REGENERATION_REQUIRED   ║
+            ╠═════════════════════╣           ╠════════════════════════╣
+            ║ • Store in context  ║           ║ • Log issue             ║
+            ║ • Share with crew   ║           ║ • Adjust parameters     ║
+            ╚═════════╤═══════════╝           ║ • Retry generation      ║
+                      │                       ╚════════════╤═══════════╝
+                      │                                    │
+                      │                                    │ retry
+                      │                                    │
+                      │              ┌─────────────────────┘
+                      │              │
+                      │ induction_complete
+                      │
+            ╔═════════▼══════════════╗
+            ║ DEEPENING_GENERATION   ║
+            ╠════════════════════════╣
+            ║ Agent: DeepeningArchitect
+            ║                        ║
+            ║ Context Available:     ║
+            ║ • Induction tone       ║
+            ║ • User profile         ║
+            ║ • Session plan         ║
+            ║                        ║
+            ║ [Same sub-states as    ║
+            ║  Induction]            ║
+            ╚════════════╤═══════════╝
+                         │
+                         │ deepening_complete
+                         │
+            ╔════════════▼═══════════╗
+            ║ SUGGESTIONS_GENERATION ║
+            ╠════════════════════════╣
+            ║ Agent: SuggestionCrafter
+            ║                        ║
+            ║ Context Available:     ║
+            ║ • Full session so far  ║
+            ║ • User goals           ║
+            ║ • E&P sexuality        ║
+            ║ • Habit loops          ║
+            ║ • Identity statements  ║
+            ║                        ║
+            ║ Additional Tools:      ║
+            ║ • Graph RAG traversal  ║
+            ║ • Goal decomposition   ║
+            ║ • Habit loop builder   ║
+            ╚════════════╤═══════════╝
+                         │
+                         │ suggestions_complete
+                         │
+            ╔════════════▼═══════════╗
+            ║ EMERGENCE_GENERATION   ║
+            ╠════════════════════════╣
+            ║ Agent: EmergenceProtocol
+            ║                        ║
+            ║ • Standard count-up    ║
+            ║ • Post-hypnotic sugg.  ║
+            ║ • Safety checks        ║
+            ╚════════════╤═══════════╝
+                         │
+                         │ emergence_complete
+                         │
+            ╔════════════▼═══════════╗
+            ║   ASSEMBLY             ║
+            ╠════════════════════════╣
+            ║ • Combine all segments ║
+            ║ • Validate coherence   ║
+            ║ • Check flow           ║
+            ║ • Ensure completeness  ║
+            ╚════════════╤═══════════╝
+                         │
+                         │ [coherence_check]
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+[pass]      │                         │ [fail]
+            │                         │
+╔═══════════▼═════════╗   ╔═══════════▼══════════╗
+║ FINAL_SAFETY_REVIEW ║   ║ COHERENCE_FIX        ║
+╠═════════════════════╣   ╠══════════════════════╣
+║ • Review complete   ║   ║ • Identify gaps      ║
+║   session           ║   ║ • Re-generate        ║
+║ • Check emergence   ║   ║   problematic segment║
+║ • Verify no harmful ║   ║ • Re-validate        ║
+║ • Approve delivery  ║   ╚══════════╤═══════════╝
+╚═════════╤═══════════╝              │
+          │                          │ fixed
+          │                          │
+          │              ┌───────────┘
+          │              │
+          │ final_approval
+          │
+╔═════════▼═════════════════╗
+║  SESSION_READY            ║
+╠═══════════════════════════╣
+║ • All segments generated  ║
+║ • Safety approved         ║
+║ • Voice synthesis queued  ║
+║ • Ready for delivery      ║
+╚═════════╤═════════════════╝
+          │
+          │ begin_delivery
+          │
+╔═════════▼═════════════════╗
+║  MONITORING               ║
+╠═══════════════════════════╣
+║ • Track delivery          ║
+║ • Monitor biometrics      ║
+║ • Adapt if needed         ║
+║ • Log all events          ║
+╚═══════════╤═════════════════╝
+            │
+            │ session_complete
+            │
+╔═══════════▼═════════════════╗
+║  AGENT_COMPLETE             ║
+╠═════════════════════════════╣
+║ • Store session data        ║
+║ • Generate analytics        ║
+║ • Clean up resources        ║
+║ • Return to idle            ║
+╚═════════════════════════════╝
+
+Parallel States (During Generation):
+┌────────────────────────────────────────┐
+│ While any agent is working:            │
+│                                        │
+│ ╔═══════════════════════════════════╗ │
+│ ║ SAFETY_OVERSEER (Always Active)   ║ │
+│ ╠═══════════════════════════════════╣ │
+│ ║ • Monitors all agent outputs      ║ │
+│ ║ • Can halt generation at any time ║ │
+│ ║ • Validates each segment          ║ │
+│ ║ • Logs all decisions              ║ │
+│ ╚═══════════════════════════════════╝ │
+└────────────────────────────────────────┘
+

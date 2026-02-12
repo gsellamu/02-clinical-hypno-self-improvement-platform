@@ -1,0 +1,797 @@
+{
+  "registry_id": "therapeutic-journaling-prompt-registry",
+  "generated_at": "2026-02-12T05:47:24Z",
+  "schema_version": "1.0",
+  "conventions": {
+    "placeholder_style": "{{var}}",
+    "format_values": [
+      "markdown",
+      "json",
+      "text"
+    ],
+    "categories": [
+      "architecture",
+      "dev",
+      "eval",
+      "journaling",
+      "product",
+      "regulation",
+      "safety",
+      "system",
+      "xr"
+    ]
+  },
+  "prompts": [
+    {
+      "id": "SYS-THERAPEUTIC-JOURNALING-PLATFORM",
+      "version": "1.0.0",
+      "category": "system",
+      "purpose": "Platform-wide system instruction for a coaching-style therapeutic journaling assistant with safety escalation.",
+      "inputs": {
+        "user_locale": "string",
+        "product_mode": "string (e.g., 'wellness_coach')"
+      },
+      "outputs": {
+        "system_prompt": "string"
+      },
+      "template": "You are the Therapeutic Journaling Platform AI.\nYou provide coaching-style journaling support and guided self-reflection exercises.\nYou do not diagnose, treat, or provide medical/mental-health services.\n\nSafety:\n- If the user expresses intent to self-harm or harm others, or is in immediate danger:\n  - Encourage immediate help (local emergency services / crisis hotline).\n  - Keep the response brief, supportive, and action-oriented.\n  - Do NOT provide advanced journaling drills.\n- For sensitive trauma disclosures: do NOT lead the user, do NOT claim certainty about memories, and avoid \u201cmemory recovery\u201d framing.\n\nBehavior:\n- Respect autonomy; avoid judgment; avoid certainty claims.\n- Prefer structured steps, timeboxes, and gentle grounding closures.\n- When asked to generate artifacts, output strictly in the requested schema.",
+      "format": "markdown",
+      "guardrails": [
+        "No diagnosis",
+        "No treatment claims",
+        "Safety escalation on self-harm/harm intent",
+        "Avoid leading memory recovery suggestions"
+      ],
+      "tags": [
+        "safety",
+        "global",
+        "system"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "PRD-THERAPEUTIC-JOURNALING",
+      "version": "1.0.0",
+      "category": "product",
+      "purpose": "Generate a PRD for the platform aligned to workbook-driven journaling modalities and safety boundaries.",
+      "inputs": {
+        "capabilities": "string[]",
+        "target_personas": "string[] (optional)",
+        "constraints": "string[] (optional)",
+        "mvp_horizon_weeks": "number (optional)"
+      },
+      "outputs": {
+        "prd_markdown": "string"
+      },
+      "template": "Create a PRD for a Therapeutic Journaling platform with these capabilities:\n{{capabilities}}\n\nInclude: target personas, key user journeys, success metrics, safety boundaries, and MVP vs V2 scope.\nOutput: PRD in Markdown with sections:\nOverview\nPersonas\nJobs-To-Be-Done\nUser Flows\nFeatures\nNon-Functional Requirements\nRisks & Safety\nAnalytics\nMilestones",
+      "format": "markdown",
+      "guardrails": [
+        "No clinical diagnosis",
+        "Include safety boundaries and escalation flow"
+      ],
+      "tags": [
+        "PRD",
+        "requirements",
+        "MVP"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "ARCH-LANGGRAPH-STATE-MACHINE",
+      "version": "1.0.0",
+      "category": "architecture",
+      "purpose": "Design a LangGraph state machine for a journaling session with typed state and transitions.",
+      "inputs": {
+        "states_required": "string[]",
+        "tools_available": "string[]",
+        "session_modes": "string[] (optional)"
+      },
+      "outputs": {
+        "mermaid_diagram": "string",
+        "state_schema_json": "object"
+      },
+      "template": "Design a LangGraph state machine for a journaling session.\n\nStates must include (at minimum):\nSafetyScreen -> Intake -> TechniqueSelect -> GuidedExercise -> Reflection -> Summary -> NextStep -> Close\n\nFor each state provide:\n- Inputs, Outputs (typed)\n- Tool calls (from: {{tools_available}})\n- Failure modes\n- Transition criteria\n\nOutput:\n1) Mermaid diagram\n2) JSON schema for the shared state payloads",
+      "format": "markdown",
+      "guardrails": [
+        "SafetyScreen must run first",
+        "Deterministic transitions"
+      ],
+      "tags": [
+        "LangGraph",
+        "orchestration",
+        "state-machine"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "MCP-TOOL-CONTRACTS-GENERATOR",
+      "version": "1.0.0",
+      "category": "architecture",
+      "purpose": "Define MCP tool interfaces (JSON schema) for core platform tools.",
+      "inputs": {
+        "tool_names": "string[]",
+        "domain_notes": "string (optional)"
+      },
+      "outputs": {
+        "mcp_manifest_json": "object"
+      },
+      "template": "Define MCP tool interfaces (JSON schema) for these tools:\n{{tool_names}}\n\nFor each tool include:\n- name\n- description\n- inputs schema\n- outputs schema\n- error schema\n\nOutput: a single JSON object representing the tool manifest.",
+      "format": "markdown",
+      "guardrails": [
+        "Schemas must be valid JSON Schema Draft 2020-12 compatible"
+      ],
+      "tags": [
+        "MCP",
+        "tools",
+        "schemas"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "BDD-GHERKIN-FEATURES",
+      "version": "1.0.0",
+      "category": "product",
+      "purpose": "Write BDD (Gherkin) scenarios for core platform features including safety escalation.",
+      "inputs": {
+        "features": "string[]"
+      },
+      "outputs": {
+        "gherkin": "string"
+      },
+      "template": "Write BDD (Gherkin) for these features:\n{{features}}\n\nFor each feature provide 3 scenarios with Given/When/Then.\nInclude at least one negative case and one safety escalation scenario where applicable.",
+      "format": "markdown",
+      "guardrails": [
+        "Safety escalation must be explicit and non-optional when triggered"
+      ],
+      "tags": [
+        "BDD",
+        "gherkin",
+        "testing"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-SPRINT-FREEWRITE",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Guide a timeboxed sprint/free-write to bypass the inner critic and increase emotional flow.",
+      "inputs": {
+        "topic": "string",
+        "timebox_minutes": "number",
+        "intensity": "number (1-5)"
+      },
+      "outputs": {
+        "instructions": "string",
+        "reflection_questions": "string[]",
+        "grounding_close": "string"
+      },
+      "template": "Guide a {{timebox_minutes}}-minute sprint journaling exercise.\nUser topic: {{topic}}.\nConstraints:\n- gentle tone\n- no analysis during writing\n- structured steps and a clear timer cue\nEnd with grounding and exactly 3 reflection questions.\n\nReturn sections:\n1) Preparation (30s)\n2) Writing instructions ({{timebox_minutes}}m)\n3) Transition (30s)\n4) Reflection prompts (3)\n5) Close (breath + reassurance)",
+      "format": "markdown",
+      "guardrails": [
+        "No diagnosis",
+        "If intensity >=4, offer shorter timebox and extra grounding"
+      ],
+      "tags": [
+        "sprint",
+        "freewrite",
+        "timebox"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-INVENTORY-TABLE",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Run a structured inventory exercise using a table to separate facts, feelings, beliefs, needs, options, and next steps.",
+      "inputs": {
+        "issue_or_question": "string"
+      },
+      "outputs": {
+        "worksheet": "string",
+        "follow_ups": "string[]",
+        "grounding_close": "string"
+      },
+      "template": "Run an \u201cinventory\u201d journaling exercise on: {{issue_or_question}}.\n\nProduce a table with columns:\nFacts | Feelings | Beliefs | Needs | Options | First tiny step\n\nThen ask 5 follow-up questions that clarify beliefs and barriers without judging.\nEnd with a 2-minute grounding close.",
+      "format": "markdown",
+      "guardrails": [
+        "No diagnosis",
+        "Keep language non-judgmental; user assigns meaning"
+      ],
+      "tags": [
+        "inventory",
+        "worksheet",
+        "cognitive"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-UNSENT-LETTER",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Facilitate an unsent letter exercise for release, boundaries, and integration.",
+      "inputs": {
+        "recipient_role": "string",
+        "topic": "string",
+        "timebox_minutes": "number",
+        "intensity": "number (1-5)"
+      },
+      "outputs": {
+        "steps": "string",
+        "integration_prompts": "string[]",
+        "grounding_close": "string"
+      },
+      "template": "Facilitate an Unsent Letter journaling exercise.\n\nRecipient: {{recipient_role}}\nTheme/topic: {{topic}}\nTimebox: {{timebox_minutes}} minutes\n\nIf intensity >=4, add extra grounding and offer a shorter timebox option.\n\nOutput steps:\n- Set intention (1 minute)\n- Write the letter (prompt scaffolds, 3\u20135 scaffolds)\n- Optional boundary statement\n- Integration: \u201cWhat did I learn?\u201d (3 prompts)\n- Close: self-compassion lines (non-clinical, non-diagnostic)",
+      "format": "markdown",
+      "guardrails": [
+        "Avoid telling user what to feel",
+        "No reconciliation pressure",
+        "No memory-recovery framing"
+      ],
+      "tags": [
+        "unsent-letter",
+        "release",
+        "boundaries"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-SENTENCE-STEMS-LADDER",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Generate sentence stems that progressively deepen from surface to beliefs to action.",
+      "inputs": {
+        "goal_area": "string",
+        "count": "number"
+      },
+      "outputs": {
+        "sentence_stems": "string[]"
+      },
+      "template": "Generate {{count}} sentence stems for goal area: {{goal_area}}.\nMake them progressively deeper from surface -> beliefs -> needs -> action.\nInclude:\n- 3 stems starting with \u201cIf I weren\u2019t afraid\u2026\u201d\n- 3 identity-based stems (\u201cI am someone who\u2026\u201d)",
+      "format": "markdown",
+      "guardrails": [
+        "No diagnosis",
+        "Avoid absolutist language"
+      ],
+      "tags": [
+        "sentence-stems",
+        "prompt-ladder"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-LIST-OF-100",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Create a list-of-100 drill to surface values and prime attention (RAS) toward desired outcomes.",
+      "inputs": {
+        "theme": "string"
+      },
+      "outputs": {
+        "instructions": "string",
+        "starter_items": "string[]",
+        "review_method": "string"
+      },
+      "template": "Create a \u201cList-of-100\u201d journaling drill for theme: {{theme}}.\n\nProvide:\n- setup instructions\n- 10 starter items\n- rules for continuing to 100 (no perfection, keep moving)\n- review method:\n  1) highlight top 10\n  2) cluster into 3 categories\n  3) pick 1 action for next 24 hours",
+      "format": "markdown",
+      "guardrails": [
+        "No pressure to finish 100 if distress rises; offer stop and grounding"
+      ],
+      "tags": [
+        "list-100",
+        "values",
+        "RAS"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-NON-DOMINANT-HAND-DIALOGUE",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Guide a non-dominant-hand dialogue with inner child or inner wisdom (user-led meaning).",
+      "inputs": {
+        "inner_part": "string (inner_child|inner_wisdom)",
+        "question": "string"
+      },
+      "outputs": {
+        "steps": "string",
+        "dialogue_turns": "string[]",
+        "integration": "string"
+      },
+      "template": "Guide a non-dominant-hand journaling exercise with safe, non-mystical framing.\nMode: {{inner_part}}\n\nSteps:\n- brief centering (30\u201360s)\n- dominant-hand writes the question: {{question}}\n- non-dominant-hand answers (short, spontaneous)\n- 5 dialogue turns (Q/A)\n- integration: dominant-hand summary + one caring action\n\nInclude an accessibility note if the user has motor limitations.",
+      "format": "markdown",
+      "guardrails": [
+        "No claims of external entities",
+        "User assigns meaning; avoid interpretation"
+      ],
+      "tags": [
+        "non-dominant-hand",
+        "parts",
+        "inner-child",
+        "inner-wisdom"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-WRITTEN-DIALOGUE-TWO-COLUMNS",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Create a two-column written dialogue between two inner parts to move from conflict to agreement.",
+      "inputs": {
+        "part_a": "string",
+        "part_b": "string"
+      },
+      "outputs": {
+        "worksheet": "string",
+        "new_contract_template": "string"
+      },
+      "template": "Create a two-column written dialogue exercise between:\nSpeaker A: {{part_a}}\nSpeaker B: {{part_b}}\n\nProvide 8 prompts that move from conflict -> understanding -> agreement.\nEnd with a \u201cnew contract\u201d bullet list template (3 items).",
+      "format": "markdown",
+      "guardrails": [
+        "Keep it non-judgmental; avoid pathologizing parts"
+      ],
+      "tags": [
+        "dialogue",
+        "parts-work-lite"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-TEMPLATE-BIOGRAPHICAL-STATEMENT",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Generate a biographical statement template for hesitant users with skip-permission language and strengths prompts.",
+      "inputs": {
+        "age_range": "string (optional)",
+        "focus": "string (optional)"
+      },
+      "outputs": {
+        "template": "string"
+      },
+      "template": "Generate a biographical-statement journaling template for a user who is hesitant to speak.\nInclude:\n- 12 gentle prompts across a timeline (childhood, adolescence, adulthood, turning points)\n- 6 strengths-based prompts\n- explicit \u201cskip\u201d permission language\nOptional focus: {{focus}}",
+      "format": "markdown",
+      "guardrails": [
+        "Avoid sensitive leading questions; user controls depth"
+      ],
+      "tags": [
+        "biographical",
+        "intake",
+        "strengths"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-INNER-CRITIC-MAP",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Map the inner critic phrases, triggers, protective function, compassionate rebuttal, and replacement cue phrase.",
+      "inputs": {
+        "domain": "string (optional)"
+      },
+      "outputs": {
+        "worksheet": "string"
+      },
+      "template": "Create a journaling sequence to map the inner critic safely (domain: {{domain}}):\n1) Identify critic phrases\n2) Identify triggers\n3) Identify function (what it tries to prevent)\n4) Write a compassionate rebuttal\n5) Create a replacement cue phrase\n\nOutput as a worksheet with fill-in blanks.",
+      "format": "markdown",
+      "guardrails": [
+        "No shaming; treat critic as protective strategy"
+      ],
+      "tags": [
+        "inner-critic",
+        "reframe",
+        "worksheet"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-VULNERABILITY-CONNECTION",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Guide a vulnerability journaling exercise focused on safe connection with boundaries.",
+      "inputs": {
+        "relationship_context": "string"
+      },
+      "outputs": {
+        "steps": "string",
+        "micro_script": "string",
+        "grounding_close": "string"
+      },
+      "template": "Guide a vulnerability journaling exercise focused on safe connection.\nContext: {{relationship_context}}\n\nInclude:\n- what I\u2019m protecting\n- what I actually need\n- a small honest sentence I can say\n- boundary-safe alternatives\n\nEnd with a 1-minute grounding.",
+      "format": "markdown",
+      "guardrails": [
+        "No pressure to disclose; emphasize choice and safety"
+      ],
+      "tags": [
+        "vulnerability",
+        "boundaries",
+        "connection"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "TJ-EXERCISE-FORGIVENESS-WITHOUT-BYPASS",
+      "version": "1.0.0",
+      "category": "journaling",
+      "purpose": "Create a forgiveness pathway without spiritual bypassing; clarify forgiveness is not excuse or reconciliation.",
+      "inputs": {
+        "target": "string",
+        "intensity": "number (1-5)"
+      },
+      "outputs": {
+        "steps": "string",
+        "boundary_statement_template": "string",
+        "next_step_plan": "string"
+      },
+      "template": "Create a forgiveness journaling pathway focused on user autonomy and realism.\nTarget: {{target}}\nIntensity: {{intensity}}\n\nInclude:\n- clarify: forgive \u2260 excuse \u2260 reconcile\n- write impact statement\n- write boundary statement\n- optional release ritual (words only)\n- next-step plan\n\nKeep it neutral and user-led.",
+      "format": "markdown",
+      "guardrails": [
+        "No pressure to reconcile",
+        "Avoid moralizing"
+      ],
+      "tags": [
+        "forgiveness",
+        "boundaries",
+        "integration"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "REG-SIX-PHASE-MEDITATION",
+      "version": "1.0.0",
+      "category": "regulation",
+      "purpose": "Lead a six-phase meditation (~6 minutes) as pre-journaling regulation.",
+      "inputs": {
+        "duration_minutes": "number",
+        "style": "string (optional)"
+      },
+      "outputs": {
+        "timed_script": "string",
+        "audio_suggestions": "string[]"
+      },
+      "template": "Lead a Six-Phase Meditation in ~{{duration_minutes}} minutes for pre-journaling.\n\nPhases:\n1) compassion\n2) gratitude\n3) forgiveness\n4) future dreaming\n5) perfect day\n6) blessing\n\nOutput: timed script with breath cues and optional background sound suggestions.\nStyle: {{style}}",
+      "format": "markdown",
+      "guardrails": [
+        "No clinical claims; avoid hypnotic authority language"
+      ],
+      "tags": [
+        "meditation",
+        "six-phase",
+        "grounding"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "REG-SCRIBBLE-TECHNIQUE",
+      "version": "1.0.0",
+      "category": "regulation",
+      "purpose": "Guide a scribble technique exercise to externalize emotion and translate imagery into insight.",
+      "inputs": {
+        "timebox_minutes": "number"
+      },
+      "outputs": {
+        "steps": "string",
+        "reflection_questions": "string[]"
+      },
+      "template": "Guide a scribble technique exercise (timebox: {{timebox_minutes}} minutes):\n- 60s scribble instructions\n- 5 interpretation questions (feelings, symbols, story) \u2014 user assigns meaning\n- 5 journal prompts to translate image -> insight -> action\nKeep it playful and non-interpretive.",
+      "format": "markdown",
+      "guardrails": [
+        "User assigns meaning; do not interpret symbols as facts"
+      ],
+      "tags": [
+        "scribble",
+        "creative",
+        "somatic"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "REG-BILATERAL-DRAWING",
+      "version": "1.0.0",
+      "category": "regulation",
+      "purpose": "Guide a bilateral drawing practice and integrate with journaling and closure.",
+      "inputs": {
+        "mode": "string (paper|tablet|vr)",
+        "rounds": "number"
+      },
+      "outputs": {
+        "instructions": "string",
+        "reflection_questions": "string[]",
+        "closure": "string"
+      },
+      "template": "Guide a bilateral drawing exercise.\nMode: {{mode}}\nRounds: {{rounds}}\n\nInclude:\n- setup (posture, breath, materials)\n- rounds: symmetrical shapes, free flow, \u201cbalance image\u201d\n- reflection questions about emotions/thoughts\n- closure: grounded body scan\n\nIf mode == vr, include VR controller tips and comfort reminders.",
+      "format": "markdown",
+      "guardrails": [
+        "Comfort-first; stop if dizziness/discomfort"
+      ],
+      "tags": [
+        "bilateral",
+        "drawing",
+        "regulation"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "XR-SCENE-SPEC-GENERATOR",
+      "version": "1.0.0",
+      "category": "xr",
+      "purpose": "Generate an XR room spec for journaling sessions (R3F/WebXR) with comfort constraints and interaction hotspots.",
+      "inputs": {
+        "theme": "string",
+        "comfort_mode": "boolean",
+        "hotspots": "string[]"
+      },
+      "outputs": {
+        "xr_scene_spec": "object"
+      },
+      "template": "Generate an XR scene specification JSON for a Therapeutic Journaling room.\nTheme: {{theme}}\n\nMust include:\n- environment: skybox, fog, lighting, water/particles (optional)\n- audio layers: ambient, breath cue, transition chime\n- interaction hotspots: {{hotspots}}\n- comfort: slow camera, no sudden motion, seated-friendly teleport\n- UI panels: readable typography, dimmable, distance 1.5\u20132.5m\n\nOutput: JSON only.",
+      "format": "json",
+      "guardrails": [
+        "Comfort-first; avoid motion sickness patterns"
+      ],
+      "tags": [
+        "XR",
+        "scene",
+        "R3F",
+        "WebXR"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "XR-CINEMATIC-MODE-PLAN",
+      "version": "1.0.0",
+      "category": "xr",
+      "purpose": "Create a cinematic mode plan: camera rails + narration chunking for a timed session.",
+      "inputs": {
+        "duration_minutes": "number",
+        "scene_count": "number"
+      },
+      "outputs": {
+        "plan_json": "object",
+        "narration_script": "string"
+      },
+      "template": "Create a \u201ccinematic mode\u201d plan for a {{duration_minutes}}-minute session:\n- {{scene_count}} scenes (intro, settle, exercise, reflection, close)\n- camera positions and transitions\n- on-screen prompt timing\n- TTS chunk plan (chunk <= 12s each)\n\nOutput:\n1) JSON (plan)\n2) narration script (Markdown)",
+      "format": "markdown",
+      "guardrails": [
+        "No abrupt camera moves; comfort mode defaults to true"
+      ],
+      "tags": [
+        "XR",
+        "cinematic",
+        "camera",
+        "TTS"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "XR-BILATERAL-DRAWING-INTERACTION-DESIGN",
+      "version": "1.0.0",
+      "category": "xr",
+      "purpose": "Design bilateral drawing interaction in VR using two controllers including haptics/audio feedback and event schema.",
+      "inputs": {
+        "platform": "string (quest|desktop_vr|webxr)",
+        "features": "string[]"
+      },
+      "outputs": {
+        "design_notes": "string",
+        "event_schema": "object"
+      },
+      "template": "Design bilateral drawing in VR using two controllers.\nPlatform: {{platform}}\nFeatures requested: {{features}}\n\nInclude:\n- brush types, smoothing, symmetry toggles\n- haptics and audio feedback\n- safety/comfort constraints\nOutput:\n1) implementation notes (Markdown)\n2) event schema (JSON) for controller input and strokes",
+      "format": "markdown",
+      "guardrails": [
+        "Comfort-first; avoid overload; accessibility options"
+      ],
+      "tags": [
+        "XR",
+        "interaction",
+        "drawing",
+        "controllers"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "DEV-MONOREPO-SCAFFOLD",
+      "version": "1.0.0",
+      "category": "dev",
+      "purpose": "Generate a monorepo scaffold (Vite+React+TS+R3F + FastAPI + LangGraph + shared packages + infra).",
+      "inputs": {
+        "package_manager": "string (pnpm|npm|yarn)",
+        "db": "string",
+        "vector_ext": "string"
+      },
+      "outputs": {
+        "repo_layout": "string",
+        "key_files": "object"
+      },
+      "template": "Create a monorepo layout:\n /apps/web (Vite+React+TS+R3F)\n /services/api (FastAPI)\n /services/orchestrator (LangGraph)\n /packages/shared (types, zod schemas)\n /packages/ui (design system)\n /infra (docker-compose, postgres+pgvector, redis)\n\nProvide:\n- root scripts ({{package_manager}})\n- docker-compose ({{db}} + {{vector_ext}} + redis)\n- .env.example\n- minimal running \u201chello scene + hello session\u201d flow",
+      "format": "markdown",
+      "guardrails": [
+        "Keep setup runnable locally; include minimal dependencies"
+      ],
+      "tags": [
+        "scaffold",
+        "repo",
+        "Vite",
+        "FastAPI",
+        "LangGraph"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "DEV-R3F-JOURNALING-PANEL",
+      "version": "1.0.0",
+      "category": "dev",
+      "purpose": "Implement an in-world journaling panel component in R3F with autosave and accessibility controls.",
+      "inputs": {
+        "api_base_url": "string",
+        "features": "string[]"
+      },
+      "outputs": {
+        "component_code": "string",
+        "usage_notes": "string"
+      },
+      "template": "Write a React component (TypeScript) for an in-world JournalingPanel in R3F:\nRequirements:\n- textured panel with editable text area (HTML overlay via drei)\n- autosave draft locally\n- \u201csubmit entry\u201d calls {{api_base_url}}/api/journal/entry\n- accessibility: font size controls, high-contrast toggle\nFeatures: {{features}}\n\nProvide full code for the component and brief usage notes.",
+      "format": "markdown",
+      "guardrails": [
+        "Avoid unsafe HTML injection; sanitize user text on render"
+      ],
+      "tags": [
+        "R3F",
+        "component",
+        "journaling",
+        "UI"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "DEV-WEBAUDIO-MIXER-TTS-DUCKING",
+      "version": "1.0.0",
+      "category": "dev",
+      "purpose": "Implement a WebAudio mixer with ambient, SFX, and TTS channels and ambient ducking while TTS plays.",
+      "inputs": {
+        "ducking_db": "number",
+        "fade_ms": "number"
+      },
+      "outputs": {
+        "code": "string",
+        "node_graph": "string"
+      },
+      "template": "Implement a WebAudio mixer:\n- ambient loop channel\n- SFX channel\n- TTS channel that ducks ambient by {{ducking_db}} dB while speaking\n- smooth fade in/out with {{fade_ms}} ms ramps\nProvide code and a brief node-graph description.",
+      "format": "markdown",
+      "guardrails": [
+        "No hard clipping; use gain ramps to avoid clicks"
+      ],
+      "tags": [
+        "WebAudio",
+        "TTS",
+        "ducking",
+        "audio"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "DEV-FASTAPI-ROUTES",
+      "version": "1.0.0",
+      "category": "dev",
+      "purpose": "Generate FastAPI routes and Pydantic models for sessions, journaling, safety, and TTS (stub).",
+      "inputs": {
+        "auth_mode": "string (none|jwt|session_cookie)",
+        "models": "string[] (optional)"
+      },
+      "outputs": {
+        "code": "string"
+      },
+      "template": "Generate FastAPI routes:\nPOST /session/start\nPOST /session/next\nPOST /journal/entry\nGET  /journal/entries\nPOST /safety/screen\nPOST /tts/render (stub)\n\nInclude Pydantic models, OpenAPI tags, and auth_mode={{auth_mode}}.",
+      "format": "markdown",
+      "guardrails": [
+        "Do not log raw journal text; include redaction hooks"
+      ],
+      "tags": [
+        "FastAPI",
+        "API",
+        "routes",
+        "schemas"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "DEV-LANGGRAPH-NODES-STUBS",
+      "version": "1.0.0",
+      "category": "dev",
+      "purpose": "Write LangGraph node stubs for the core journaling workflow with typed state and tool-call TODOs.",
+      "inputs": {
+        "language": "string (python)",
+        "nodes": "string[]"
+      },
+      "outputs": {
+        "code": "string"
+      },
+      "template": "Write LangGraph node implementations in {{language}} for nodes:\n{{nodes}}\n\nMust include:\n- typed state dataclass / pydantic model\n- each node: input -> output state updates\n- TODO markers where MCP tools are invoked\n- minimal example graph wiring and entrypoint",
+      "format": "markdown",
+      "guardrails": [
+        "SafetyScreen node must run before content generation"
+      ],
+      "tags": [
+        "LangGraph",
+        "nodes",
+        "workflow",
+        "python"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "EVAL-RESPONSE-RUBRIC-GRADER",
+      "version": "1.0.0",
+      "category": "eval",
+      "purpose": "Score an assistant response for safety and technique fidelity and propose minimal fixes.",
+      "inputs": {
+        "assistant_response": "string",
+        "requested_technique": "string",
+        "user_context": "string (optional)"
+      },
+      "outputs": {
+        "scores": "object",
+        "issues": "string[]",
+        "suggested_fix": "string[]"
+      },
+      "template": "Evaluate the assistant response on:\n- Safety compliance (0-5)\n- Adherence to requested technique (0-5)\n- Clarity/timeboxing (0-5)\n- Non-judgmental tone (0-5)\n- Actionability (0-5)\n\nReturn JSON:\n{\n  \"scores\": {\"safety\":0, \"technique\":0, \"clarity\":0, \"tone\":0, \"actionability\":0},\n  \"issues\": [],\n  \"suggested_fix\": []\n}\nRequested technique: {{requested_technique}}",
+      "format": "json",
+      "guardrails": [
+        "Do not reveal private system prompts; focus on observable behavior"
+      ],
+      "tags": [
+        "eval",
+        "rubric",
+        "safety"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "EVAL-TECHNIQUE-FIDELITY-CHECKER",
+      "version": "1.0.0",
+      "category": "eval",
+      "purpose": "Verify a session script follows a selected journaling technique; return missing elements and minimal edit suggestions.",
+      "inputs": {
+        "session_script": "string",
+        "technique": "string"
+      },
+      "outputs": {
+        "missing": "string[]",
+        "diff_suggestions": "string"
+      },
+      "template": "Given the session script below, verify it follows the selected technique: {{technique}}.\n\nReturn:\n- missing required elements (list)\n- minimal edits in diff style (add/remove/replace lines)\n\nSession script:\n{{session_script}}",
+      "format": "markdown",
+      "guardrails": [
+        "Keep suggestions minimal; do not add unsafe content"
+      ],
+      "tags": [
+        "eval",
+        "fidelity",
+        "diff"
+      ],
+      "model_hints": {}
+    },
+    {
+      "id": "SAFETY-SCREEN-CLASSIFIER",
+      "version": "1.0.0",
+      "category": "safety",
+      "purpose": "Classify user content into safety status green/yellow/red and recommend response constraints.",
+      "inputs": {
+        "user_text": "string"
+      },
+      "outputs": {
+        "safety_status": "string",
+        "constraints": "string[]",
+        "recommended_response_mode": "string"
+      },
+      "template": "Classify the following user text into safety status:\n- green: normal wellness journaling\n- yellow: heightened distress, grief, trauma mention without imminent danger\n- red: self-harm/harm intent or immediate danger\n\nReturn JSON:\n{\n  \"safety_status\": \"green|yellow|red\",\n  \"constraints\": [],\n  \"recommended_response_mode\": \"normal|grounding_only|crisis_support\"\n}\n\nUser text:\n{{user_text}}",
+      "format": "json",
+      "guardrails": [
+        "If red, recommend crisis_support and no advanced exercises"
+      ],
+      "tags": [
+        "safety",
+        "triage"
+      ],
+      "model_hints": {}
+    }
+  ]
+}

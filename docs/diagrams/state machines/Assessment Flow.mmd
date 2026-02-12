@@ -1,0 +1,140 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ASSESSMENT FLOW STATE MACHINE                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+                          ╔═══════════════════╗
+                          ║ ASSESSMENT_START  ║
+                          ╚═════════╤═════════╝
+                                    │
+                                    │ determine_assessment_type
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+         [first_time_user]    [has_sugg]    [has_sugg && needs_ep]
+                    │               │               │
+        ╔═══════════▼═══════════╗   │   ╔═══════════▼═══════════╗
+        ║ SUGGESTIBILITY_QUEST  ║   │   ║  E&P_ASSESSMENT       ║
+        ╠═══════════════════════╣   │   ╠═══════════════════════╣
+        ║                       ║   │   ║                       ║
+        ║ State Data:           ║   │   ║ State Data:           ║
+        ║ • current_q: 1-36     ║   │   ║ • current_trait: 1-4  ║
+        ║ • q1_score: int       ║   │   ║ • family_tree: {}     ║
+        ║ • q2_score: int       ║   │   ║ • relationships: []   ║
+        ║ • responses: []       ║   │   ║ • traits_complete: [] ║
+        ║                       ║   │   ║                       ║
+        ║ Sub-states:           ║   │   ║ Sub-states:           ║
+        ║ ┌──────────────────┐ ║   │   ║ ┌──────────────────┐ ║
+        ║ │ QUESTION_1_18    │ ║   │   ║ │ FAMILY_ORIGIN    │ ║
+        ║ │   (Q1)           │ ║   │   ║ │                  │ ║
+        ║ └────────┬─────────┘ ║   │   ║ └────────┬─────────┘ ║
+        ║          │           ║   │   ║          │           ║
+        ║          │ q18_done  ║   │   ║          │ trait_1_done
+        ║          │           ║   │   ║          │           ║
+        ║ ┌────────▼─────────┐ ║   │   ║ ┌────────▼─────────┐ ║
+        ║ │ QUESTION_19_36   │ ║   │   ║ │ REJECTION_RESP   │ ║
+        ║ │   (Q2)           │ ║   │   ║ │                  │ ║
+        ║ └────────┬─────────┘ ║   │   ║ └────────┬─────────┘ ║
+        ║          │           ║   │   ║          │           ║
+        ║          │ q36_done  ║   │   ║          │ trait_2_done
+        ║          │           ║   │   ║          │           ║
+        ║ ┌────────▼─────────┐ ║   │   ║ ┌────────▼─────────┐ ║
+        ║ │ SCORING          │ ║   │   ║ │ BODY_CONNECTION  │ ║
+        ║ │ • Calculate Q1   │ ║   │   ║ │                  │ ║
+        ║ │ • Calculate Q2   │ ║   │   ║ └────────┬─────────┘ ║
+        ║ │ • Graph lookup   │ ║   │   ║          │           ║
+        ║ └────────┬─────────┘ ║   │   ║          │ trait_3_done
+        ║          │           ║   │   ║          │           ║
+        ╚══════════╪═══════════╝   │   ║ ┌────────▼─────────┐ ║
+                   │               │   ║ │ RELATIONSHIP_PAT │ ║
+                   │ scoring_done  │   ║ │                  │ ║
+                   │               │   ║ └────────┬─────────┘ ║
+        ╔══════════▼═══════════╗   │   ║          │           ║
+        ║ FINGER_TEST_OPTIONAL ║   │   ║          │ trait_4_done
+        ╠══════════════════════╣   │   ║          │           ║
+        ║ [if has_vr_headset]  ║   │   ║ ┌────────▼─────────┐ ║
+        ║                      ║   │   ║ │ CLASSIFICATION   │ ║
+        ║ Sub-states:          ║   │   ║ │ • Evaluate 3/4   │ ║
+        ║ ┌──────────────────┐ ║   │   ║ │ • Apply modifiers│ ║
+        ║ │ CALIBRATION      │ ║   │   ║ │ • Calculate %    │ ║
+        ║ └────────┬─────────┘ ║   │   ║ └────────┬─────────┘ ║
+        ║          │           ║   │   ║          │           ║
+        ║ ┌────────▼─────────┐ ║   │   ╚══════════╪═══════════╝
+        ║ │ LEFT_ARM_TEST    │ ║   │              │
+        ║ │ (Direct)         │ ║   │              │ ep_complete
+        ║ └────────┬─────────┘ ║   │              │
+        ║          │           ║   │   ╔══════════▼═══════════╗
+        ║ ┌────────▼─────────┐ ║   │   ║ WHEEL_OF_HAPPINESS   ║
+        ║ │ RIGHT_ARM_TEST   │ ║   │   ╠══════════════════════╣
+        ║ │ (Inferred)       │ ║   │   ║                      ║
+        ║ └────────┬─────────┘ ║   │   ║ State Data:          ║
+        ║          │           ║   │   ║ • area_ratings: {}   ║
+        ║ ┌────────▼─────────┐ ║   │   ║ • current_area: 1-8  ║
+        ║ │ ML_CLASSIFICATION│ ║   │   ║                      ║
+        ║ │ • Compare L vs R │ ║   │   ║ Sub-states:          ║
+        ║ │ • Confidence     │ ║   │   ║ ┌──────────────────┐ ║
+        ║ └────────┬─────────┘ ║   │   ║ │ RATING_AREAS     │ ║
+        ║          │           ║   │   ║ │ • Health         │ ║
+        ╚══════════╪═══════════╝   │   ║ │ • Family/Friends │ ║
+                   │               │   ║ │ • Career         │ ║
+                   │ finger_test_done  ║ │ • Romance        │ ║
+                   │               │   ║ │ • Fun            │ ║
+        ╔══════════▼═══════════╗   │   ║ │ • Money          │ ║
+        ║ SUGG_PROFILE_READY   ║   │   ║ │ • Environment    │ ║
+        ╠══════════════════════╣   │   ║ │ • Growth         │ ║
+        ║ • Store results      ║   │   ║ └────────┬─────────┘ ║
+        ║ • Update user profile║   │   ║          │           ║
+        ╚══════════╤═══════════╝   │   ║          │ all_rated ║
+                   │               │   ║          │           ║
+                   └───────────────┼───╫──────────┘           ║
+                                   │   ║ ┌──────────────────┐ ║
+                                   │   ║ │ CALCULATION      │ ║
+                                   │   ║ │ • Average        │ ║
+                                   │   ║ │ • Bumpiness      │ ║
+                                   │   ║ │ • Priorities     │ ║
+                                   │   ║ └────────┬─────────┘ ║
+                                   │   ║          │           ║
+                                   │   ╚══════════╪═══════════╝
+                                   │              │
+                                   │              │ wheel_complete
+                                   │              │
+                        ╔══════════▼══════════════▼══════════╗
+                        ║   UNIFIED_PROFILE_GENERATION       ║
+                        ╠════════════════════════════════════╣
+                        ║                                    ║
+                        ║ Actions:                           ║
+                        ║ 1. Combine Sugg + Sex profiles     ║
+                        ║ 2. Apply 10% adjustment rule       ║
+                        ║ 3. Generate session config         ║
+                        ║    • Induction style               ║
+                        ║    • Language patterns             ║
+                        ║    • Voice characteristics         ║
+                        ║ 4. Link to goals (from Wheel)      ║
+                        ║ 5. Create knowledge graph nodes    ║
+                        ║ 6. Store unified profile           ║
+                        ║                                    ║
+                        ╚════════════════╤═══════════════════╝
+                                         │
+                                         │ profile_ready
+                                         │
+                        ╔════════════════▼═══════════════════╗
+                        ║   ASSESSMENT_COMPLETE              ║
+                        ╠════════════════════════════════════╣
+                        ║ • Notify session orchestrator      ║
+                        ║ • Display results to user          ║
+                        ║ • Ready for first session          ║
+                        ╚════════════════════════════════════╝
+
+Transitions with Guards:
+- [first_time_user]: No prior assessments → Full assessment flow
+- [has_sugg]: Has suggestibility → Skip to E&P if relationship goals
+- [has_sugg && needs_ep]: Has sugg, relationship goals → E&P + Wheel
+- [has_vr_headset]: VR available → Optional finger test
+- [no_vr]: No VR → Skip finger test
+- [3_of_4_traits]: 3+ core traits evaluated → Can classify sexuality
+- [<3_traits]: Less than 3 traits → More data needed
+
+State Data Persistence:
+- Auto-save every 30 seconds
+- Save on page navigation
+- Resume from any sub-state
+- Expire draft after 7 days

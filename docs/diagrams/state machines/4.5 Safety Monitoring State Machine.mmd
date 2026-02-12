@@ -1,0 +1,143 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                 SAFETY MONITORING STATE MACHINE                      │
+└─────────────────────────────────────────────────────────────────────┘
+
+                        ╔═══════════════════╗
+                        ║  SAFETY_INACTIVE  ║
+                        ╚═════════╤═════════╝
+                                  │
+                                  │ session_begins
+                                  │ / initialize_monitoring()
+                                  │
+                        ╔═════════▼═════════╗
+                        ║  MONITORING_ACTIVE║
+                        ╚═════════╤═════════╝
+                                  │
+            ┌─────────────────────┼─────────────────────┐
+            │                     │                     │
+    ╔═══════▼═════════╗  ╔════════▼═════════╗  ╔══════▼════════╗
+    ║ BIOMETRIC_CHECK ║  ║ CONTENT_SAFETY   ║  ║ USER_RESPONSE ║
+    ╠═════════════════╣  ╠══════════════════╣  ╠═══════════════╣
+    ║ Every 1 second: ║  ║ Every segment:   ║  ║ Continuous:   ║
+    ║ • HR            ║  ║ • Validate       ║  ║ • Verbal cues ║
+    ║ • HRV           ║  ║ • No harmful     ║  ║ • Body        ║
+    ║ • GSR           ║  ║   suggestions    ║  ║   language    ║
+    ║ • Respiration   ║  ║ • Autonomy       ║  ║ • Engagement  ║
+    ║ • Eye tracking  ║  ║   respected      ║  ║ • Response    ║
+    ║                 ║  ║ • Emergence OK   ║  ║   time        ║
+    ╚═════════╤═══════╝  ╚════════╤═════════╝  ╚═══════╤═══════╝
+              │                   │                    │
+              │                   │                    │
+              └───────────────────┼────────────────────┘
+                                  │
+                                  │ analyze_all_inputs
+                                  │
+                        ╔═════════▼═════════════╗
+                        ║  RISK_ASSESSMENT      ║
+                        ╠═══════════════════════╣
+                        ║ Calculate risk score: ║
+                        ║ risk = weighted_sum(  ║
+                        ║   biometric_stress,   ║
+                        ║   verbal_distress,    ║
+                        ║   non_responsiveness, ║
+                        ║   contraindication    ║
+                        ║ )                     ║
+                        ╚═════════╤═════════════╝
+                                  │
+                  ┌───────────────┼───────────────┐
+                  │               │               │
+          [risk < 0.3]      [0.3 ≤ risk < 0.7]   [risk ≥ 0.7]
+                  │               │               │
+        ╔═════════▼═══════╗  ╔════▼═════════╗  ╔═▼═════════════╗
+        ║   NORMAL        ║  ║   CAUTION    ║  ║   ALERT       ║
+        ╠═════════════════╣  ╠══════════════╣  ╠═══════════════╣
+        ║ • Continue      ║  ║ • Heightened ║  ║ • Immediate   ║
+        ║   monitoring    ║  ║   monitoring ║  ║   action      ║
+        ║ • Log metrics   ║  ║ • Prepare    ║  ║ • Intervene   ║
+        ║                 ║  ║   adaptation ║  ║ • May escalate║
+        ╚═════════╤═══════╝  ╚══════╤═══════╝  ╚═══════╤═══════╝
+                  │                  │                  │
+                  │                  │                  │
+                  └──────────────────┤                  │
+                                     │                  │
+                           [risk_decreases]    [risk_increases]
+                                     │                  │
+                                     │         ╔════════▼═══════════╗
+                                     │         ║  INTERVENTION      ║
+                                     │         ╠════════════════════╣
+                                     │         ║ Level 1: Pacing    ║
+                                     │         ║ • Slow down        ║
+                                     │         ║ • Add pauses       ║
+                                     │         ║                    ║
+                                     │         ║ Level 2: Content   ║
+                                     │         ║ • Calming exercise ║
+                                     │         ║ • Breathing cue    ║
+                                     │         ║                    ║
+                                     │         ║ Level 3: Pause     ║
+                                     │         ║ • Suspend session  ║
+                                     │         ║ • Assess readiness ║
+                                     │         ╚════════╤═══════════╝
+                                     │                  │
+                                     │          [intervention_applied]
+                                     │                  │
+                                     │         ╔════════▼═══════════╗
+                                     │         ║  POST_INTERVENTION ║
+                                     │         ╠════════════════════╣
+                                     │         ║ • Monitor for 60s  ║
+                                     │         ║ • Assess response  ║
+                                     │         ╚════════╤═══════════╝
+                                     │                  │
+                                     │          ┌───────┴───────┐
+                                     │          │               │
+                                     │    [improved]      [not_improved]
+                                     │          │               │
+                                     │          │      ╔════════▼════════╗
+                                     │          │      ║   ESCALATION    ║
+                                     │          │      ╠═════════════════╣
+                                     │          │      ║ • Emergency     ║
+                                     │          │      ║   emergence     ║
+                                     │          │      ║ • Alert human   ║
+                                     │          │      ║ • Log incident  ║
+                                     │          │      ║ • Flag account  ║
+                                     │          │      ╚═════════╤═══════╝
+                                     │          │                │
+                                     │          │                │
+                                     └──────────┴────────────────┘
+                                                │
+                                                │ continue_monitoring
+                                                │
+                                     ╔══════════▼═══════════╗
+                                     ║ MONITORING_ACTIVE    ║
+                                     ║ (Back to main loop)  ║
+                                     ╚══════════╤═══════════╝
+                                                │
+                                                │ session_ends
+                                                │
+                                     ╔══════════▼═══════════╗
+                                     ║  SAFETY_COMPLETE     ║
+                                     ╠══════════════════════╣
+                                     ║ • Generate report    ║
+                                     ║ • Store all logs     ║
+                                     ║ • Calculate stats    ║
+                                     ║ • Deactivate         ║
+                                     ╚══════════════════════╝
+
+Concurrent Checks (Running in Parallel):
+┌────────────────────────────────────────────────┐
+│ CONTRAINDICATION_MONITOR (Always Active)      │
+│ ┌────────────────────────────────────────────┐ │
+│ │ • Check user health history                │ │
+│ │ • Monitor for exclusion criteria           │ │
+│ │ • Flag if conditions emerge mid-session    │ │
+│ │ • Immediate halt if critical               │ │
+│ └────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────┘
+
+Escalation Triggers:
+- Sustained HR > 140 bpm for > 60 seconds
+- GSR > 0.9 for > 60 seconds
+- No response to prompts for > 30 seconds
+- Verbal distress cues detected
+- User requests to stop
+- Biometric anomalies (sudden spike/drop)
+- Content validation failures

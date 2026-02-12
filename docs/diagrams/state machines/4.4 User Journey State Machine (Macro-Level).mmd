@@ -1,0 +1,192 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                  USER JOURNEY STATE MACHINE                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+                    ╔═══════════════════════╗
+                    ║   NEW_VISITOR         ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ land_on_site
+                              │
+                    ╔═════════▼═════════════╗
+                    ║   EXPLORING           ║
+                    ╠═══════════════════════╣
+                    ║ • View landing page   ║
+                    ║ • Read about HMI      ║
+                    ║ • Watch demo video    ║
+                    ║ • Check pricing       ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ signup_initiated
+                              │
+                    ╔═════════▼═════════════╗
+                    ║   REGISTERING         ║
+                    ╠═══════════════════════╣
+                    ║ • Create account      ║
+                    ║ • Email verification  ║
+                    ║ • Accept terms        ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ registration_complete
+                              │
+                    ╔═════════▼═════════════╗
+                    ║   ONBOARDING          ║
+                    ╠═══════════════════════╣
+                    ║ • Welcome tour        ║
+                    ║ • Goal questionnaire  ║
+                    ║ • Consent forms       ║
+                    ║ • Platform tutorial   ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ onboarding_complete
+                              │
+                    ╔═════════▼═════════════╗
+                    ║   FIRST_ASSESSMENT    ║
+                    ╠═══════════════════════╣
+                    ║ • Suggestibility test ║
+                    ║ • Wheel of Happiness  ║
+                    ║ • Profile generation  ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ profile_ready
+                              │
+                    ╔═════════▼═════════════╗
+                    ║   FIRST_SESSION_PREP  ║
+                    ╠═══════════════════════╣
+                    ║ • Schedule session    ║
+                    ║ • Setup reminders     ║
+                    ║ • Prepare environment ║
+                    ║ • Review what to      ║
+                    ║   expect              ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ session_starts
+                              │
+                    ╔═════════▼═════════════╗
+                    ║   IN_SESSION          ║
+                    ╠═══════════════════════╣
+                    ║ • Active hypnosis     ║
+                    ║ • Biometric tracking  ║
+                    ║ • Real-time safety    ║
+                    ╚═════════╤═════════════╝
+                              │
+                              │ session_ends
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+    [positive_exp]    [neutral_exp]    [negative_exp]
+              │               │               │
+    ╔═════════▼═══╗  ╔════════▼═════╗  ╔═════▼═════════╗
+    ║   ENGAGED   ║  ║   HESITANT   ║  ║  AT_RISK      ║
+    ╠═════════════╣  ╠══════════════╣  ╠═══════════════╣
+    ║ • Books next║  ║ • Waits      ║  ║ • May churn   ║
+    ║   session   ║  ║ • Evaluates  ║  ║ • Needs       ║
+    ║ • Completes ║  ║ • Considers  ║  ║   intervention║
+    ║   homework  ║  ║   continuing ║  ╚═══════╤═══════╝
+    ╚═════════╤═══╝  ╚══════╤═══════╝          │
+              │              │                  │
+              │              │                  │ escalate_to_support
+              │              │                  │
+              │              │         ╔════════▼═══════════╗
+              │              │         ║  SUPPORT_CONTACT   ║
+              │              │         ╠════════════════════╣
+              │              │         ║ • Human outreach   ║
+              │              │         ║ • Address concerns ║
+              │              │         ║ • Adjust plan      ║
+              │              │         ╚════════╤═══════════╝
+              │              │                  │
+              │              │        [issue_resolved]
+              │              │                  │
+              │              └──────────────────┘
+              │                       │
+              │ continue_sessions     │
+              │                       │
+    ╔═════════▼═══════════════════════▼═════════════╗
+    ║            ACTIVE_USER                        ║
+    ╠═══════════════════════════════════════════════╣
+    ║                                               ║
+    ║ Recurring States:                             ║
+    ║ ┌───────────────────────────────────────────┐ ║
+    ║ │ SESSION_CYCLE                             │ ║
+    ║ │ ┌──────────┐    ┌──────────┐            │ ║
+    ║ │ │ Session  │───►│ Homework │            │ ║
+    ║ │ └────┬─────┘    └────┬─────┘            │ ║
+    ║ │      │               │                   │ ║
+    ║ │      └───────┬───────┘                   │ ║
+    ║ │              │                           │ ║
+    ║ │      ┌───────▼────────┐                 │ ║
+    ║ │      │ Progress Review│                 │ ║
+    ║ │      └───────┬────────┘                 │ ║
+    ║ │              │                           │ ║
+    ║ │      ┌───────▼────────┐                 │ ║
+    ║ │      │   Next Session │                 │ ║
+    ║ │      └────────────────┘                 │ ║
+    ║ └───────────────────────────────────────────┘ ║
+    ║                                               ║
+    ║ Milestones:                                   ║
+    ║ • Session 3: E&P Assessment (if relationship  ║
+    ║   goals)                                      ║
+    ║ • Session 5: Progress evaluation              ║
+    ║ • Session 10: Goal reassessment               ║
+    ║                                               ║
+    ╚═══════════════════════════════╤═══════════════╝
+                                    │
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+           [goals_achieved]  [ongoing]      [plateau_reached]
+                    │               │               │
+        ╔═══════════▼═════╗         │     ╔═════════▼═══════╗
+        ║   COMPLETION    ║         │     ║  REASSESSMENT   ║
+        ╠═════════════════╣         │     ╠═════════════════╣
+        ║ • Celebrate     ║         │     ║ • New Wheel     ║
+        ║ • Final session ║         │     ║ • Adjust goals  ║
+        ║ • Export data   ║         │     ║ • Refresh plan  ║
+        ║ • Maintenance   ║         │     ╚═════════╤═══════╝
+        ║   plan          ║         │               │
+        ╚═════════╤═══════╝         │               │ new_plan_created
+                  │                 │               │
+                  │                 │               └──────┐
+                  │                 │                      │
+                  │         [continues] │                  │
+                  │                 │                      │
+                  │                 ▼                      │
+                  │     ╔═══════════════════╗             │
+                  │     ║  MAINTENANCE      ║◄────────────┘
+                  │     ╠═══════════════════╣
+                  │     ║ • Monthly check-in║
+                  │     ║ • Booster sessions║
+                  │     ║ • Community       ║
+                  │     ╚═══════════════════╝
+                  │
+                  │ transition_to_maintenance
+                  │
+        ╔═════════▼═════════════════╗
+        ║   GRADUATE                ║
+        ╠═══════════════════════════╣
+        ║ • Certificate of          ║
+        ║   completion              ║
+        ║ • Referral program        ║
+        ║ • Alumni community        ║
+        ║ • Optional continued      ║
+        ║   access                  ║
+        ╚═══════════════════════════╝
+
+Exit States (User leaves platform):
+┌────────────────────────────────────────┐
+│                                        │
+│ ╔════════════════════════════════════╗ │
+│ ║  CHURNED                           ║ │
+│ ╠════════════════════════════════════╣ │
+│ ║ Reasons:                           ║ │
+│ ║ • No improvement seen              ║ │
+│ ║ • Too expensive                    ║ │
+│ ║ • Uncomfortable with hypnosis      ║ │
+│ ║ • Found alternative solution       ║ │
+│ ║                                    ║ │
+│ ║ Recovery:                          ║ │
+│ ║ • Win-back campaigns               ║ │
+│ ║ • Surveys for feedback             ║ │
+│ ║ • Special offers                   ║ │
+│ ╚════════════════════════════════════╝ │
+└────────────────────────────────────────┘

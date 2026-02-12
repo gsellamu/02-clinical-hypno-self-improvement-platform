@@ -1,0 +1,106 @@
+sequenceDiagram
+    participant Orchestrator as Session Orchestrator
+    participant Planner as Session Planner (AutoGen)
+    participant Safety as Safety Overseer (AutoGen)
+    participant Crew as Tactical Crew (CrewAI)
+    participant Induction as Induction Composer
+    participant Deepening as Deepening Architect
+    participant Suggestions as Suggestion Crafter
+    participant RAG as RAG Engine
+    participant MCP as MCP Servers
+    participant LLM as Custom Hypnosis LLM
+
+    Orchestrator->>Planner: Plan session for user
+    Note over Orchestrator,Planner: User: ID-123<br/>Session: #1<br/>Profile: Emotional Sugg + Physical Sex
+    
+    Planner->>Planner: Analyze user profile
+    Planner->>RAG: Query: Optimal protocol for this profile
+    RAG->>RAG: Graph RAG reasoning
+    RAG-->>Planner: Recommended approach
+    
+    Planner->>Planner: Create session strategy
+    Note over Planner: Strategy:<br/>1. Emotional arm raising induction<br/>2. Progressive + staircase deepening<br/>3. Connection-focused suggestions<br/>4. Standard emergence
+    
+    Planner->>Safety: Review strategy for safety
+    Safety->>MCP: Check contraindications
+    MCP-->>Safety: No contraindications found
+    Safety->>Safety: Validate protocol choices
+    Safety-->>Planner: Strategy approved
+    
+    Planner-->>Orchestrator: Session plan
+    
+    Note over Orchestrator,Crew: BEGIN TACTICAL GENERATION
+    
+    Orchestrator->>Crew: Generate session components
+    Crew->>Crew: Initialize crew with session plan
+    
+    Note over Crew: Sequential process: Induction → Deepening → Suggestions
+    
+    Crew->>Induction: Task: Generate induction
+    Note over Induction: Agent receives:<br/>- User profile<br/>- Session plan<br/>- Emotional suggestibility flag
+    
+    Induction->>MCP: Call retrieve_induction tool
+    Note over Induction,MCP: {<br/>  "suggestibility": "emotional",<br/>  "session_number": 1<br/>}
+    MCP-->>Induction: Base induction script
+    
+    Induction->>RAG: Retrieve induction variations
+    RAG-->>Induction: 5 similar scripts
+    
+    Induction->>LLM: Synthesize personalized induction
+    Note over Induction,LLM: System: You are HMI induction composer<br/>User: Create emotional induction for user-123<br/>Context: Base script + variations<br/>Requirements: Inferential language, misdirection
+    
+    LLM-->>Induction: Personalized induction script
+    
+    Induction->>Safety: Validate induction
+    Safety->>Safety: Check for harmful content
+    Safety->>Safety: Verify structure
+    Safety-->>Induction: Approved
+    
+    Induction-->>Crew: Induction component complete
+    
+    Crew->>Deepening: Task: Generate deepening
+    Note over Crew: Deepening agent receives induction context
+    
+    Deepening->>MCP: Call retrieve_deepening tool
+    MCP-->>Deepening: Progressive relaxation script
+    
+    Deepening->>RAG: Retrieve deepening techniques
+    RAG-->>Deepening: Staircase, reactionary, heavy/light
+    
+    Deepening->>LLM: Synthesize deepening sequence
+    LLM-->>Deepening: Personalized deepening
+    
+    Deepening->>Safety: Validate
+    Safety-->>Deepening: Approved
+    
+    Deepening-->>Crew: Deepening component complete
+    
+    Crew->>Suggestions: Task: Generate suggestions
+    Note over Suggestions: Agent receives full context:<br/>- Induction tone<br/>- Deepening level<br/>- User goals<br/>- E&P sexuality
+    
+    Suggestions->>RAG: Query: Career success + Physical sexuality
+    RAG->>RAG: Hybrid search (vector + graph)
+    RAG-->>Suggestions: Relevant suggestion templates + identity statements
+    
+    Suggestions->>LLM: Synthesize therapeutic suggestions
+    Note over Suggestions,LLM: Prompt includes:<br/>- Goal: Career success<br/>- Sexuality: Physical (emphasize connection)<br/>- Habit loops from user's goals<br/>- Identity shift language
+    
+    LLM-->>Suggestions: Personalized suggestions
+    
+    Suggestions->>Safety: Validate suggestions
+    Safety->>Safety: Check for unrealistic promises
+    Safety->>Safety: Verify respect for autonomy
+    Safety-->>Suggestions: Approved
+    
+    Suggestions-->>Crew: Suggestions component complete
+    
+    Crew->>Crew: Assemble complete session
+    Crew->>Crew: Validate coherence and flow
+    Crew-->>Orchestrator: Complete session script
+    
+    Orchestrator->>Safety: Final safety review
+    Safety->>Safety: Check entire session
+    Safety->>Safety: Verify emergence included
+    Safety-->>Orchestrator: Approved for delivery
+    
+    Orchestrator-->>Orchestrator: Session ready
