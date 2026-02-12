@@ -25,7 +25,10 @@ if (-not (Test-Path ".git")) {
 $checkRemote = git remote | Select-String "origin"
 if (-not $checkRemote) {
     Write-Yellow "No remote 'origin' found."
-    $github_url = Read-Host "Enter your GitHub Repository URL (e.g., https://github.com)"
+    $github_url = Read-Host "Enter your GitHub Repository URL (e.g., https://github.com/gsellamu/02-clinical-hypno-self-improvement-platform"
+    if (-not $github_url) {
+         $github_url = "https://github.com/gsellamu/02-clinical-hypno-self-improvement-platform"
+    }
     if (-not [string]::IsNullOrWhiteSpace($github_url)) {
         git remote add origin $github_url
         Write-Green "Remote 'origin' linked to $github_url"
